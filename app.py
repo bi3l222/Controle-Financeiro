@@ -2,9 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+import json # Importa a biblioteca json
 
 app = Flask(__name__)
-CORS(app) # Habilita CORS para permitir requisições do seu frontend (domínios diferentes)
+CORS(app) # Habilita CORS para permitir requisições de qualquer origem (IMPORTANTE para CORS no frontend)
 
 DATABASE = 'database.db' # Nome do arquivo do banco de dados SQLite
 
@@ -15,15 +16,14 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    # Cria a tabela 'users' se ela não existir
     conn.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
-            is_premium BOOLEAN DEFAULT 0, -- 0 para False, 1 para True
-            financial_settings TEXT,     -- Armazenar configurações financeiras como JSON string
-            expenses TEXT                -- Armazenar gastos como JSON string
+            is_premium BOOLEAN DEFAULT 0,
+            financial_settings TEXT DEFAULT '{}', -- Default para JSON vazio
+            expenses TEXT DEFAULT '[]'             -- Default para JSON vazio
         );
     ''')
     conn.commit()
@@ -32,7 +32,6 @@ def init_db():
 # Inicializa o banco de dados quando a aplicação inicia
 with app.app_context():
     init_db()
-
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -49,20 +48,20 @@ def login():
 
     if user:
         if check_password_hash(user['password_hash'], password):
-            # Retorna o status premium e dados financeiros/gastos
+            # Carrega financial_settings e expenses do banco de dados
             financial_settings = {}
             if user['financial_settings']:
                 try:
                     financial_settings = json.loads(user['financial_settings'])
                 except json.JSONDecodeError:
-                    financial_settings = {} # Em caso de erro de parse, retorna vazio
+                    financial_settings = {}
 
             expenses = []
             if user['expenses']:
                 try:
                     expenses = json.loads(user['expenses'])
                 except json.JSONDecodeError:
-                    expenses = [] # Em caso de erro de parse, retorna vazio
+                    expenses = []
 
             return jsonify({
                 "success": True,
@@ -70,8 +69,8 @@ def login():
                 "user": {
                     "username": user['username'],
                     "is_premium": bool(user['is_premium']),
-                    "financialSettings": financial_settings,
-                    "expenses": expenses
+                    "financialSettings": financial_settings, # Retorna as configurações
+                    "expenses": expenses                     # Retorna os gastos
                 }
             }), 200
         else:
@@ -79,100 +78,13 @@ def login():
     else:
         return jsonify({"success": False, "message": "Usuário não encontrado."}), 404
 
-# Rota para o ADMIN cadastrar usuários premium (DEVE SER PROTEGIDA!)
-# Em um ambiente real, esta rota NÃO DEVERIA ESTAR ACESSÍVEL PUBLICAMENTE
-# ou deveria exigir autenticação admin forte (ex: token secreto).
-# Aqui é apenas para você poder testar o cadastro.
-import json # Importa json para manipular strings JSON
 @app.route('/api/register_premium_user', methods=['POST'])
 def register_premium_user():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
     
-    # OPCIONAL: adicionar uma chave secreta para validar que só você pode usar esta rota
-    # admin_secret_key = data.get('admin_secret_key')
-    # if admin_secret_key != "SUA_CHAVE_SECRETA_ADMIN": # Defina esta chave
-    #    return jsonify({"success": False, "message": "Acesso negado."}), 403
-
-    if not username or not password:
-        return jsonify({"success": False, "message": "Nome de usuário e senha são obrigatórios."}), 400
-
-    conn = get_db_connection()
-    
-    # Verifica se o usuário já existe
-    existing_user = conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
-    if existing_user:
-        conn.close()
-        return jsonify({"success": False, "message": "Nome de usuário já existe."}), 409 # Conflict
-
-    password_hash = generate_password_hash(password) # Cria o hash da senha
-
-    try:
-        conn.execute('INSERT INTO users (username, password_hash, is_premium, financial_settings, expenses) VALUES (?, ?, ?, ?, ?)',
-                     (username, password_hash, True, json.dumps({}), json.dumps([]))) # Inicia com settings/expenses vazios
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "message": "Usuário premium registrado com sucesso!"}), 201 # Created
-    except sqlite3.IntegrityError:
-        conn.close()
-        return jsonify({"success": False, "message": "Erro de integridade ao registrar usuário."}), 500
-    except Exception as e:
-        conn.close()
-        return jsonify({"success": False, "message": f"Erro inesperado: {str(e)}"}), 500
-
-# Rota para o ADMIN atualizar dados de um usuário (financeiro, gastos)
-# Esta rota também DEVE SER PROTEGIDA com autenticação de admin.
-@app.route('/api/update_user_data', methods=['POST'])
-def update_user_data():
-    data = request.get_json()
-    username = data.get('username')
-    financial_settings = data.get('financialSettings', {})
-    expenses = data.get('expenses', [])
-
-    # Autenticação de admin necessária aqui (ex: token secreto, IP restrito)
-    # if data.get('admin_secret_key') != "SUA_CHAVE_SECRETA_ADMIN":
-    #     return jsonify({"success": False, "message": "Acesso negado."}), 403
-
-    if not username:
-        return jsonify({"success": False, "message": "Nome de usuário é obrigatório."}), 400
-
-    conn = get_db_connection()
-    try:
-        conn.execute('UPDATE users SET financial_settings = ?, expenses = ? WHERE username = ?',
-                     (json.dumps(financial_settings), json.dumps(expenses), username))
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "message": "Dados do usuário atualizados com sucesso!"}), 200
-    except Exception as e:
-        conn.close()
-        return jsonify({"success": False, "message": f"Erro ao atualizar dados: {str(e)}"}), 500
-
-
-if __name__ == '__main__':
-    # Quando rodar localmente, esta linha inicializa o DB
-    # Em um ambiente de hospedagem, o provedor pode ter um script para iniciar o DB
-    with app.app_context():
-        init_db() 
-    app.run(debug=True, port=5000) # Rode em debug=True para desenvolvimento. Mude para False em produção!
-
-    # Seu app.py (fragmento, certifique-se de ter o código completo)
-
-# ... (imports e configurações de DB) ...
-
-@app.route('/api/register_premium_user', methods=['POST'])
-def register_premium_user():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    
-    # IMPORTANTE: Em produção, esta rota DEVE ser protegida!
-    # Por exemplo, com um token de autenticação de administrador.
-    # Exemplo:
-    # admin_token = request.headers.get('Authorization')
-    # if admin_token != "Bearer SEU_TOKEN_SECRETO_ADMIN":
-    #    return jsonify({"success": False, "message": "Acesso negado."}), 403
-
+    # IMPORTANTE: Em produção, esta rota DEVE ser protegida com autenticação de administrador!
     if not username or not password:
         return jsonify({"success": False, "message": "Nome de usuário e senha são obrigatórios."}), 400
 
@@ -186,7 +98,7 @@ def register_premium_user():
     password_hash = generate_password_hash(password)
 
     try:
-        # AQUI definimos is_premium como True (1)
+        # Insere novo usuário premium com configurações e gastos vazios como JSON
         conn.execute('INSERT INTO users (username, password_hash, is_premium, financial_settings, expenses) VALUES (?, ?, ?, ?, ?)',
                      (username, password_hash, True, json.dumps({}), json.dumps([])))
         conn.commit()
@@ -199,4 +111,58 @@ def register_premium_user():
         conn.close()
         return jsonify({"success": False, "message": f"Erro inesperado: {str(e)}"}), 500
 
-# ... (outras rotas e execução do app) ...
+# NOVA ROTA: Salvar Configurações Financeiras de Usuário Premium
+@app.route('/api/save_financial_settings', methods=['POST'])
+def save_financial_settings():
+    data = request.get_json()
+    username = data.get('username')
+    financial_settings = data.get('financialSettings') # Já vem como objeto JSON do frontend
+
+    if not username or financial_settings is None:
+        return jsonify({"success": False, "message": "Usuário e configurações financeiras são obrigatórios."}), 400
+    
+    # ATENÇÃO: Em um sistema real, você PRECISA verificar a autenticação do usuário aqui.
+    # Ex: usar um token JWT do usuário para garantir que 'username' seja o do usuário logado.
+    # Por simplicidade, assumimos que o frontend envia o username correto do usuário logado.
+
+    conn = get_db_connection()
+    try:
+        # Atualiza apenas a coluna financial_settings para o usuário
+        conn.execute('UPDATE users SET financial_settings = ? WHERE username = ?',
+                     (json.dumps(financial_settings), username))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Configurações financeiras salvas com sucesso!"}), 200
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "message": f"Erro ao salvar configurações financeiras: {str(e)}"}), 500
+
+# NOVA ROTA: Salvar Gastos de Usuário Premium
+@app.route('/api/save_expenses', methods=['POST'])
+def save_expenses():
+    data = request.get_json()
+    username = data.get('username')
+    expenses = data.get('expenses') # Já vem como array JSON do frontend
+
+    if not username or expenses is None:
+        return jsonify({"success": False, "message": "Usuário e gastos são obrigatórios."}), 400
+    
+    # ATENÇÃO: Assim como a rota de settings, você PRECISA verificar a autenticação do usuário aqui.
+
+    conn = get_db_connection()
+    try:
+        # Atualiza apenas a coluna expenses para o usuário
+        conn.execute('UPDATE users SET expenses = ? WHERE username = ?',
+                     (json.dumps(expenses), username))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Gastos salvos com sucesso!"}), 200
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "message": f"Erro ao salvar gastos: {str(e)}"}), 500
+
+
+if __name__ == '__main__':
+    with app.app_context():
+        init_db()
+    app.run(debug=True, port=5000)

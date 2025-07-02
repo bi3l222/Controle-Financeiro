@@ -13,12 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadDataBtn = document.getElementById('load-data-btn');
     const startNewBtn = document.getElementById('start-new-btn');
     const accessMessage = document.getElementById('access-message');
-    const accessPremiumWhatsappBtn = document.getElementById('access-premium-whatsapp-btn'); // Novo: Botão para WhatsApp
+    const accessPremiumWhatsappBtn = document.getElementById('access-premium-whatsapp-btn');
 
-    const premiumUsernameInput = document.getElementById('premium-username'); // Novo
-    const premiumPasswordInput = document.getElementById('premium-password'); // Novo
-    const loginPremiumBtn = document.getElementById('login-premium-btn'); // Novo
-    const premiumLoginMessage = document.getElementById('premium-login-message'); // Novo
+    const premiumUsernameInput = document.getElementById('premium-username');
+    const premiumPasswordInput = document.getElementById('premium-password');
+    const loginPremiumBtn = document.getElementById('login-premium-btn');
+    const premiumLoginMessage = document.getElementById('premium-login-message');
 
     const registerAccessCodeInput = document.getElementById('register-access-code');
     const cartaoViraDiaInput = document.getElementById('cartao-vira-dia');
@@ -62,21 +62,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveEditedExpenseBtn = document.getElementById('save-edited-expense-btn');
 
 
-    // --- Variáveis de Dados (persistidas via localStorage ou carregadas do backend) ---
-    // currentUserData agora pode vir do backend para premium users
-    let currentUserData = null; 
-    // currentAccessCode é para o acesso local (gratuito)
-    let currentAccessCode = null; 
-    // currentUsername armazena o nome de usuário se o login for premium
-    let currentUsername = null; 
+    // --- Variáveis de Dados ---
+    let currentUserData = null; // Armazena dados do usuário (local ou premium)
+    let currentAccessCode = null; // Código de acesso para usuários locais
+    let currentUsername = null; // Nome de usuário para usuários premium (logado)
 
     // --- Configurações do Plano Premium ---
     const PREMIUM_PRICE = "19,90";
-    const WHATSAPP_PHONE = "551196693652"; // Seu número de WhatsApp com código do país (55) e DDD (11)
+    const WHATSAPP_PHONE = "551196693652";
     
     // URL DO SEU BACKEND PYTHON (MUITO IMPORTANTE: SUBSTITUA PELA URL REAL!)
-    // Ex: 'https://seuhosting.com/api.py' ou 'http://localhost:5000/api' se testando localmente
     const BACKEND_API_URL = 'http://127.0.0.1:5000/api'; // <--- MUDAR ISSO PARA A URL REAL DO SEU BACKEND!
+
 
     // --- Funções Auxiliares ---
 
@@ -117,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let dueDate = new Date(pDate);
         
         if (faturaFechaDia === undefined || faturaFechaDia === null) {
-            // console.warn("Dia de fechamento da fatura não configurado. As parcelas serão calculadas com base no mês da compra.");
+            // Se faturaFechaDia não estiver configurado, assume que a compra cai no mês atual.
         } else if (pDate.getDate() > faturaFechaDia) {
             dueDate.setMonth(pDate.getMonth() + 1);
         }
@@ -383,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const expense = currentUserData.expenses.find(exp => exp.id === expenseId);
         if (expense && expense.installments && expense.installments[parcelaIndex]) {
             expense.installments[parcelaIndex].paid = isChecked;
-            saveUserData();
+            saveUserData(); // Salva a mudança no status da parcela
             updateFinancialSummary();
             renderHistory();
         }
@@ -499,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUserData.expenses[index].installments = newInstallments;
         currentUserData.expenses[index].date = new Date().toISOString();
 
-        saveUserData();
+        saveUserData(); // Salva a alteração
         updateFinancialSummary();
         renderHistory();
         editModal.classList.add('hidden');
@@ -510,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteExpense = (expenseId) => {
         if (confirm('Tem certeza que deseja excluir este gasto?')) {
             currentUserData.expenses = currentUserData.expenses.filter(exp => exp.id !== expenseId);
-            saveUserData();
+            saveUserData(); // Salva após deletar
             updateFinancialSummary();
             renderHistory();
             showMessage(homeMessage, 'Gasto excluído com sucesso!', 'success');
@@ -518,28 +515,41 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    // Salva os dados do usuário.
-    // Se for um usuário local, salva no localStorage.
-    // Se for um usuário premium, salvaria no backend (não implementado aqui, apenas simulação).
-    const saveUserData = () => {
-        if (currentUsername) { // Usuário premium logado
-            // AQUI VOCÊ ENVIARIA OS DADOS PARA O SEU BACKEND PYTHON (SALVAR/ATUALIZAR GASTOS)
-            // fetch(BACKEND_API_URL + '/save_expenses', { ... })
-            // Por enquanto, apenas simula que os dados premium seriam salvos no servidor.
-            console.log("Dados de usuário premium seriam salvos no servidor agora.");
-            // Você pode até mesmo salvar os dados no localStorage como backup para premium users
-            // mas o ideal é que a fonte da verdade seja o banco de dados.
-            localStorage.setItem(`premiumUserData_${currentUsername}`, JSON.stringify(currentUserData));
+    // Salva os dados do usuário. Condicional para local ou premium.
+    const saveUserData = async () => {
+        if (currentUsername) { // Usuário premium logado (salva no backend)
+            try {
+                const response = await fetch(BACKEND_API_URL + '/update_user_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: currentUsername, // Envia o username para identificar o usuário
+                        financialSettings: currentUserData.financialSettings,
+                        expenses: currentUserData.expenses
+                    })
+                });
 
-        } else if (currentAccessCode) { // Usuário local
+                const data = await response.json();
+                if (data.success) {
+                    console.log("Dados premium salvos no servidor:", data.message);
+                } else {
+                    console.error("Erro ao salvar dados premium no servidor:", data.message);
+                    // showMessage(homeMessage, "Erro ao salvar dados premium no servidor.", "error"); // Não sobrecarregar com mensagem a cada salvamento
+                }
+            } catch (error) {
+                console.error('Erro de conexão ao salvar dados premium:', error);
+                // showMessage(homeMessage, "Erro de conexão ao salvar dados premium.", "error");
+            }
+        } else if (currentAccessCode) { // Usuário local (salva no localStorage)
             localStorage.setItem(`localUserData_${currentAccessCode}`, JSON.stringify(currentUserData));
+            console.log("Dados locais salvos no localStorage.");
         }
     };
 
-    // Carrega os dados do usuário.
-    // Se for um usuário local, carrega do localStorage.
-    // Se for um usuário premium, carregaria do backend (não implementado aqui, apenas simulação).
-    const loadUserData = (type, identifier) => {
+    // Carrega os dados do usuário. Condicional para local ou premium.
+    const loadUserData = async (type, identifier, password = null) => {
         if (type === 'local') {
             const data = localStorage.getItem(`localUserData_${identifier}`);
             if (data) {
@@ -555,7 +565,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 currentUserData.isPremium = false; // Usuário local não é premium
                 currentAccessCode = identifier;
-                currentUsername = null; // Garante que não é um usuário premium logado
+                currentUsername = null;
+
                 showMessage(accessMessage, 'Dados locais carregados com sucesso!', 'success');
                 setTimeout(() => {
                     showPage('home-section');
@@ -568,43 +579,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentAccessCode = null;
                 currentUsername = null;
             }
-        } else if (type === 'premium') {
-            // AQUI OCORRERIA A CHAMADA PARA O SEU BACKEND PYTHON PARA AUTENTICAR E CARREGAR DADOS
-            // Exemplo de como seria a chamada (você implementará isso no loginPremiumBtn click):
-            // fetch(BACKEND_API_URL + '/login', { ... }).then(response => response.json()).then(data => { ... });
-            
-            // Para o propósito deste frontend, vamos simular que o login premium já foi feito no backend
-            // e que temos os dados do usuário (por exemplo, de um localstorage simulado).
-            const data = localStorage.getItem(`premiumUserData_${identifier}`); // Identificador aqui é o username
-            const isPremiumOnServer = localStorage.getItem(`serverPremiumStatus_${identifier}`) === 'true'; // Simula status do servidor
-
-            if (data && isPremiumOnServer) { // Simula que os dados premium existem e estão ativos no servidor
-                currentUserData = JSON.parse(data);
-                 if (!currentUserData.expenses) { currentUserData.expenses = []; }
-                 if (!currentUserData.financialSettings) { currentUserData.financialSettings = {}; }
-                 // Garante a estrutura de installments
-                 currentUserData.expenses.forEach(expense => {
-                    if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1 && (!expense.installments || expense.installments.length !== expense.numParcelas)) {
-                        expense.installments = Array.from({ length: expense.numParcelas }, () => ({ paid: false }));
-                    } else if (expense.numParcelas === 1 && expense.installments) {
-                        delete expense.installments;
-                    }
+        } else if (type === 'premium' && password !== null) {
+            try {
+                const response = await fetch(BACKEND_API_URL + '/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: identifier, // 'identifier' é o username aqui
+                        password: password
+                    })
                 });
-                currentUserData.isPremium = true;
-                currentUsername = identifier;
-                currentAccessCode = null; // Garante que não é um usuário local logado
 
-                showMessage(premiumLoginMessage, 'Login Premium efetuado com sucesso!', 'success');
-                setTimeout(() => {
-                    showPage('home-section');
-                    updateFinancialSummary();
-                    renderHistory();
-                }, 500);
-            } else {
-                showMessage(premiumLoginMessage, 'Usuário premium não encontrado ou plano inativo. Contrate o plano.', 'error');
-                currentUserData = null;
-                currentUsername = null;
-                currentAccessCode = null;
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.user.is_premium) {
+                        // Login Premium REALIZADO. Carrega TODOS os dados do usuário do backend.
+                        currentUserData = {
+                            financialSettings: data.user.financialSettings || {},
+                            expenses: data.user.expenses || [],
+                            isPremium: true
+                        };
+                        // Garante a estrutura de installments para dados vindos do backend
+                        currentUserData.expenses.forEach(expense => {
+                            if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1 && (!expense.installments || expense.installments.length !== expense.numParcelas)) {
+                                expense.installments = Array.from({ length: expense.numParcelas }, () => ({ paid: false }));
+                            } else if (expense.numParcelas === 1 && expense.installments) {
+                                delete expense.installments;
+                            }
+                        });
+
+                        currentUsername = data.user.username;
+                        currentAccessCode = null; 
+
+                        showMessage(premiumLoginMessage, 'Login Premium efetuado com sucesso! Carregando seus dados...', 'success');
+                        setTimeout(() => {
+                            showPage('home-section');
+                            updateFinancialSummary();
+                            renderHistory();
+                        }, 500);
+
+                    } else {
+                        showMessage(premiumLoginMessage, 'Usuário não tem plano premium ativo. Contrate o plano.', 'info');
+                    }
+                } else {
+                    showMessage(premiumLoginMessage, data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Erro na requisição de login premium:', error);
+                showMessage(premiumLoginMessage, 'Erro de conexão com o servidor. Verifique sua internet ou tente mais tarde.', 'error');
             }
         }
     };
@@ -614,7 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Navegação
     navHomeBtn.addEventListener('click', () => {
-        if (currentUserData) { // Só permite navegar se houver um usuário (local ou premium) logado
+        if (currentUserData) {
             showPage('home-section');
             updateFinancialSummary();
         } else {
@@ -633,9 +658,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     navSettingsBtn.addEventListener('click', () => {
         if (currentUserData) {
-            // Se for um usuário local, carrega o código de acesso
+            // Se for um usuário local, carrega o código de acesso no campo de registro local
             registerAccessCodeInput.value = currentAccessCode || '';
-            // Se for um usuário premium, este campo pode não ser relevante ou estar desabilitado
+            // Se for um usuário premium, podemos desabilitar ou limpar o campo de código local
+            if (currentUsername) {
+                 registerAccessCodeInput.disabled = true;
+                 registerAccessCodeInput.placeholder = "Logado como Premium (sem código local)";
+            } else {
+                 registerAccessCodeInput.disabled = false;
+                 registerAccessCodeInput.placeholder = "Ex: meucontrole123";
+            }
             
             cartaoViraDiaInput.value = currentUserData.financialSettings?.cartaoViraDia || '';
             faturaFechaDiaInput.value = currentUserData.financialSettings?.faturaFechaDia || '';
@@ -659,27 +691,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     startNewBtn.addEventListener('click', () => {
-        // Para um novo controle local, resetamos tudo
         registerAccessCodeInput.value = '';
         cartaoViraDiaInput.value = '';
         faturaFechaDiaInput.value = '';
         faturaVenceDiaInput.value = '';
         rendaMensalInput.value = '';
         currentUserData = { financialSettings: {}, expenses: [] };
-        currentAccessCode = "novo_local_" + Date.now(); // Gera um novo código local para o novo controle
-        currentUsername = null; // Garante que não é um usuário premium
+        currentAccessCode = "novo_local_" + Date.now();
+        currentUsername = null;
         showMessage(accessMessage, 'Novo controle local iniciado. Salve suas configurações!', 'info');
         showPage('settings-section');
     });
 
-    // NOVO: Ação do botão "Quero o Plano Premium!" (WhatsApp)
+    // Ação do botão "Quero o Plano Premium!" (WhatsApp)
     accessPremiumWhatsappBtn.addEventListener('click', () => {
         const message = encodeURIComponent(`Olá, Gabriel! Tenho interesse no Plano Premium do Controle Financeiro por R$ ${PREMIUM_PRICE}.`);
         const whatsappLink = `https://wa.me/${WHATSAPP_PHONE}?text=${message}`;
         window.open(whatsappLink, '_blank');
     });
 
-    // NOVO: Ação do botão "Entrar (Plano Premium)"
+    // Ação do botão "Entrar (Plano Premium)"
     loginPremiumBtn.addEventListener('click', async () => {
         const username = premiumUsernameInput.value.trim();
         const password = premiumPasswordInput.value.trim();
@@ -688,78 +719,18 @@ document.addEventListener('DOMContentLoaded', () => {
             showMessage(premiumLoginMessage, 'Preencha usuário e senha premium.', 'error');
             return;
         }
-
-        // Simula a chamada ao backend para login
-        try {
-            const response = await fetch(BACKEND_API_URL + '/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: username,
-                    password: password
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                if (data.user.is_premium) {
-                    // Login Premium REALIZADO. Carrega os dados do usuário.
-                    // ATENÇÃO: Aqui você carregaria os dados financeiros (gastos, configurações) do backend,
-                    // mas para manter a compatibilidade com o localStorage atual, vamos simular que carregamos.
-                    // Em um sistema real, o backend retornaria todos os dados do usuário premium.
-                    currentUserData = {
-                        financialSettings: data.user.financialSettings || {}, // Vindo do backend
-                        expenses: data.user.expenses || [], // Vindo do backend
-                        isPremium: true
-                    };
-                    currentUsername = data.user.username;
-                    currentAccessCode = null; // Limpa o código de acesso local
-
-                    // Se a pessoa logar como premium, os dados de gastos do localStorage não são mais a fonte da verdade.
-                    // Você teria que migrar os dados existentes do localStorage para o banco de dados do usuário premium
-                    // na primeira vez que ele logasse como premium, ou sempre carregar do banco.
-                    
-                    // Apenas para simulação:
-                    // Se houver dados no localStorage, podemos considerar migrá-los na primeira vez
-                    // ou perguntar ao usuário se quer migrar. Por simplicidade, vamos resetar ou carregar do servidor.
-                    
-                    // Para o exemplo, vamos SIMULAR que o backend retornou os dados completos do usuário premium.
-                    // Para persistir os dados de gastos de usuários premium, você precisaria adicionar endpoints
-                    // no seu backend Python para salvar/carregar despesas também.
-
-                    showMessage(premiumLoginMessage, 'Login Premium efetuado com sucesso! Carregando seus dados...', 'success');
-                    setTimeout(() => {
-                        showPage('home-section');
-                        updateFinancialSummary();
-                        renderHistory();
-                    }, 500);
-
-                } else {
-                    showMessage(premiumLoginMessage, 'Usuário não tem plano premium ativo. Contrate o plano.', 'info');
-                    // Pode redirecionar para a seção de WhatsApp ou algo similar
-                }
-            } else {
-                showMessage(premiumLoginMessage, data.message, 'error');
-            }
-        } catch (error) {
-            console.error('Erro na requisição de login premium:', error);
-            showMessage(premiumLoginMessage, 'Erro de conexão com o servidor. Verifique sua internet ou tente mais tarde.', 'error');
-        }
+        await loadUserData('premium', username, password);
     });
 
-
-    // Seção de Cadastro/Configurações
-    saveSettingsBtn.addEventListener('click', () => {
-        const code = registerAccessCodeInput.value.trim(); // Este é o código para usuários LOCAIS
+    // Seção de Cadastro/Configurações (Salvar)
+    saveSettingsBtn.addEventListener('click', async () => {
+        const code = registerAccessCodeInput.value.trim();
         const viraDia = parseInt(cartaoViraDiaInput.value);
         const fechaDia = parseInt(faturaFechaDiaInput.value);
         const venceDia = parseInt(faturaVenceDiaInput.value);
         const renda = parseFloat(rendaMensalInput.value);
 
-        if (!code || !viraDia || !fechaDia || !venceDia || isNaN(renda) || renda <= 0) {
+        if (!viraDia || !fechaDia || !venceDia || isNaN(renda) || renda <= 0) {
             showMessage(settingsMessage, 'Por favor, preencha todos os campos corretamente.', 'error');
             return;
         }
@@ -769,43 +740,18 @@ document.addEventListener('DOMContentLoaded', () => {
              return;
         }
 
-        // Se o usuário atual for premium logado, ele não deve salvar settings em um código local
-        if (currentUsername) {
-            showMessage(settingsMessage, 'Você está logado como Premium. Suas configurações seriam salvas no servidor.', 'info');
-            // AQUI VOCÊ ENVIARIA AS CONFIGURAÇÕES PARA O BACKEND VIA UMA ROTA DE ATUALIZAÇÃO
-            // Ex: fetch(BACKEND_API_URL + '/update_settings', { ... });
-            // Por simplicidade, vamos simular o sucesso e não salvar localmente para premium.
-            currentUserData.financialSettings = { cartaoViraDia: viraDia, faturaFechaDia: fechaDia, faturaVenceDia: venceDia, rendaMensal: renda };
-            // Você também salvaria expenses se houvesse alterações
-            // saveUserData(); // Esta função precisaria de lógica para salvar no backend para premium users
-            showMessage(settingsMessage, 'Configurações premium atualizadas (simulado).', 'success');
-            setTimeout(() => {
-                showPage('home-section');
-                updateFinancialSummary();
-            }, 500);
-            return;
-        }
-
-        // Lógica para salvar configurações de usuário LOCAL
-        if (!currentUserData || !currentAccessCode || currentAccessCode !== code) {
-            if (localStorage.getItem(`localUserData_${code}`)) {
-                showMessage(settingsMessage, 'Este código de acesso local já existe. Tente carregar ou use outro.', 'error');
-                return;
-            }
-        }
-        
-        currentUserData = {
-            financialSettings: {
-                cartaoViraDia: viraDia,
-                faturaFechaDia: fechaDia,
-                faturaVenceDia: venceDia,
-                rendaMensal: renda,
-            },
-            expenses: currentUserData ? currentUserData.expenses : []
+        // Atualiza currentUserData.financialSettings
+        currentUserData.financialSettings = {
+            cartaoViraDia: viraDia,
+            faturaFechaDia: fechaDia,
+            faturaVenceDia: venceDia,
+            rendaMensal: renda,
         };
-        currentAccessCode = code; // Garante que o código de acesso atual é o que foi salvo
-        saveUserData(); // Salva no localStorage
-        showMessage(settingsMessage, 'Configurações locais salvas com sucesso!', 'success');
+
+        // Salva os dados (agora a função saveUserData é condicional)
+        await saveUserData(); // Chama saveUserData que enviará para o backend se premium
+
+        showMessage(settingsMessage, 'Configurações salvas com sucesso!', 'success');
         setTimeout(() => {
             showPage('home-section');
             updateFinancialSummary();
@@ -815,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Seção Home (Adicionar Gastos)
     categoryButtons.forEach(button => {
         button.addEventListener('click', (e) => {
-            if (!currentUserData) { // Não permite adicionar gasto sem estar logado
+            if (!currentUserData) {
                 showMessage(homeMessage, 'Faça login ou inicie um novo controle para adicionar gastos.', 'error');
                 showPage('access-section');
                 return;
@@ -871,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    saveExpenseBtn.addEventListener('click', () => {
+    saveExpenseBtn.addEventListener('click', async () => {
         if (!currentUserData) {
             showMessage(homeMessage, 'Erro: Nenhum usuário logado. Faça login ou inicie um controle.', 'error');
             showPage('access-section');
@@ -927,12 +873,11 @@ document.addEventListener('DOMContentLoaded', () => {
             installments: installments
         };
 
-        // Adiciona o gasto ao currentUserData
         if (!currentUserData.expenses) {
             currentUserData.expenses = [];
         }
         currentUserData.expenses.push(newExpense);
-        saveUserData(); // Salva o estado atual do currentUserData
+        await saveUserData(); // Salva o estado atualizado dos gastos
 
         updateFinancialSummary();
         showMessage(homeMessage, 'Gasto registrado com sucesso!', 'success');
