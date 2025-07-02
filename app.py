@@ -155,3 +155,48 @@ if __name__ == '__main__':
     with app.app_context():
         init_db() 
     app.run(debug=True, port=5000) # Rode em debug=True para desenvolvimento. Mude para False em produção!
+
+    # Seu app.py (fragmento, certifique-se de ter o código completo)
+
+# ... (imports e configurações de DB) ...
+
+@app.route('/api/register_premium_user', methods=['POST'])
+def register_premium_user():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    # IMPORTANTE: Em produção, esta rota DEVE ser protegida!
+    # Por exemplo, com um token de autenticação de administrador.
+    # Exemplo:
+    # admin_token = request.headers.get('Authorization')
+    # if admin_token != "Bearer SEU_TOKEN_SECRETO_ADMIN":
+    #    return jsonify({"success": False, "message": "Acesso negado."}), 403
+
+    if not username or not password:
+        return jsonify({"success": False, "message": "Nome de usuário e senha são obrigatórios."}), 400
+
+    conn = get_db_connection()
+    
+    existing_user = conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
+    if existing_user:
+        conn.close()
+        return jsonify({"success": False, "message": "Nome de usuário já existe."}), 409
+
+    password_hash = generate_password_hash(password)
+
+    try:
+        # AQUI definimos is_premium como True (1)
+        conn.execute('INSERT INTO users (username, password_hash, is_premium, financial_settings, expenses) VALUES (?, ?, ?, ?, ?)',
+                     (username, password_hash, True, json.dumps({}), json.dumps([])))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Usuário premium registrado com sucesso!"}), 201
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({"success": False, "message": "Erro de integridade ao registrar usuário."}), 500
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "message": f"Erro inesperado: {str(e)}"}), 500
+
+# ... (outras rotas e execução do app) ...

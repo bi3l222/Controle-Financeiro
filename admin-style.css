@@ -1,0 +1,55 @@
+/* admin-style.css */
+
+.admin-main {
+    max-width: 700px; /* Um pouco menor que o main principal */
+}
+
+.admin-section {
+    padding: 25px;
+    background-color: #fefefe;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+}
+
+.admin-section h2 {
+    color: var(--primary-dark);
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.8em;
+}
+
+.admin-card {
+    background-color: #eef7ff; /* Fundo mais claro para os cards internos */
+    border: 1px solid #bbdefb;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+}
+
+.admin-card h3 {
+    color: #3f51b5;
+    font-size: 1.5em;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px dashed #c0d8f0;
+    padding-bottom: 10px;
+}
+
+.admin-card p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.logout-button {
+    background-color: #e74c3c; /* Vermelho para sair */
+    margin-top: 30px;
+}
+.logout-button:hover {
+    background-color: #c0392b;
+}
+
+/* Reutiliza o .message do style.css principal */
+/* .message.hidden { display: none; } */

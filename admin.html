@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Meu Controle Financeiro</title>
+    <link rel="stylesheet" href="style.css"> <link rel="stylesheet" href="admin-style.css"> </head>
+<body>
+    <header>
+        <h1>💎 Admin - Meu Controle Financeiro</h1>
+        <nav>
+            <a href="index.html" class="nav-button">🏠 Voltar ao Início</a>
+        </nav>
+    </header>
+
+    <main class="admin-main">
+        <section id="admin-login-section" class="admin-section active">
+            <h2>Login de Administrador</h2>
+            <div class="input-group">
+                <label for="admin-username">Usuário Admin:</label>
+                <input type="text" id="admin-username" placeholder="Seu usuário de administrador" required>
+            </div>
+            <div class="input-group">
+                <label for="admin-password">Senha Admin:</label>
+                <input type="password" id="admin-password" placeholder="Sua senha de administrador" required>
+            </div>
+            <button id="admin-login-btn">🔐 Entrar como Admin</button>
+            <div id="admin-login-message" class="message"></div>
+        </section>
+
+        <section id="admin-dashboard-section" class="admin-section hidden">
+            <h2>Bem-vindo, Administrador!</h2>
+            
+            <div class="admin-card">
+                <h3>Registrar Novo Usuário Premium</h3>
+                <p>Use este formulário para cadastrar novos usuários que adquiriram o Plano Premium.</p>
+                <div class="input-group">
+                    <label for="new-premium-username">Nome de Usuário (Cliente):</label>
+                    <input type="text" id="new-premium-username" placeholder="Nome de usuário para o cliente" required>
+                </div>
+                <div class="input-group">
+                    <label for="new-premium-password">Senha Inicial (Cliente):</label>
+                    <input type="password" id="new-premium-password" placeholder="Senha inicial para o cliente" required>
+                </div>
+                <button id="register-new-premium-btn">➕ Registrar Usuário Premium</button>
+                <div id="register-premium-message" class="message"></div>
+            </div>
+
+            <button id="admin-logout-btn" class="logout-button">🚪 Sair do Painel Admin</button>
+        </section>
+    </main>
+
+    <script src="admin-script.js"></script> </body>
+</html>
