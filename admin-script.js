@@ -14,12 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerPremiumMessage = document.getElementById('register-premium-message');
 
     // --- Configurações de Acesso Admin (MUITO BÁSICAS E INSEGURAS PARA PRODUÇÃO REAL) ---
-    // Em um sistema real, estas credenciais estariam no backend, ou você usaria um sistema de autenticação mais robusto.
     const ADMIN_USERNAME = 'gabriel_admin';
     const ADMIN_PASSWORD = 'senha_segura_admin'; 
 
     // URL DO SEU BACKEND PYTHON (MESMA DO script.js)
-    const BACKEND_API_URL = 'https://controle-financeiro-n56whuf0g-gabriels-projects-e88afafe.vercel.app'; // <--- VERIFIQUE E MUDAR ISSO PARA A URL REAL DO SEU BACKEND!
+    // <--- VERIFIQUE E MUDAR ISSO PARA A URL REAL DO SEU BACKEND!
+    const BACKEND_API_URL = 'http://127.0.0.1:5000/api'; 
 
     // --- Funções Auxiliares ---
     const showMessage = (element, msg, type = 'success') => {
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         adminDashboardSection.classList.add('hidden');
         adminUsernameInput.value = '';
         adminPasswordInput.value = '';
-        localStorage.removeItem('adminLoggedIn'); // Limpa o status de login
+        localStorage.removeItem('adminLoggedIn');
     };
 
     // --- Event Listeners ---
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = adminPasswordInput.value.trim();
 
         if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-            localStorage.setItem('adminLoggedIn', 'true'); // Marca como logado no localStorage
+            localStorage.setItem('adminLoggedIn', 'true');
             showAdminPanel();
             showMessage(adminLoginMessage, 'Login de Admin bem-sucedido!', 'success');
         } else {
@@ -86,10 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     username: username,
                     password: password,
-                    // O is_premium é definido como True no backend para esta rota
-                    // admin_secret_key: "SUA_CHAVE_SECRETA_ADMIN" // Se você decidir proteger a rota
                 })
             });
+
+            // Verifica se a resposta HTTP é OK (200-299). Se não for, lança um erro.
+            if (!response.ok) {
+                const errorText = await response.text(); // Tenta ler o texto do erro
+                throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+            }
 
             const data = await response.json();
 
@@ -102,12 +106,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Erro na requisição de registro de usuário premium:', error);
-            showMessage(registerPremiumMessage, 'Erro de conexão com o backend. Verifique o servidor.', 'error');
+            // Mensagem mais específica para o usuário
+            if (error.message.includes("Failed to fetch")) {
+                 showMessage(registerPremiumMessage, 'Erro de conexão com o backend. O servidor pode estar offline ou a URL está incorreta.', 'error');
+            } else {
+                showMessage(registerPremiumMessage, `Erro ao tentar registrar: ${error.message}`, 'error');
+            }
         }
     });
 
     // --- Inicialização ---
-    // Verifica se o admin já está logado (simples, via localStorage)
     if (localStorage.getItem('adminLoggedIn') === 'true') {
         showAdminPanel();
     } else {

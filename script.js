@@ -69,10 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Configurações do Plano Premium ---
     const PREMIUM_PRICE = "19,90";
-    const WHATSAPP_PHONE = "551196693652";
-    
+    const WHATSAPP_PHONE = "5511946693652"; // Seu número de WhatsApp
+
     // URL DO SEU BACKEND PYTHON (MUITO IMPORTANTE: SUBSTITUA PELA URL REAL!)
-    const BACKEND_API_URL = 'http://127.0.0.1:5000/api'; // <--- MUDAR ISSO PARA A URL REAL DO SEU BACKEND!
+    // EX: 'https://seuhosting.com/api' (se seu backend estiver lá)
+    // Se estiver testando LOCALMENTE, use 'http://127.0.0.1:5000/api'
+    const BACKEND_API_URL = 'http://127.0.0.1:5000/api'; // <--- VOCÊ DEVE MUDAR ISSO!
 
 
     // --- Funções Auxiliares ---
@@ -327,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         addHistoryActionListeners();
         addParcelaPaidListeners();
-        // Não atualiza status do PDF aqui, pois PDF é apenas Premium agora
     };
 
     // Adiciona listeners para os botões de editar e excluir no histórico
@@ -380,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const expense = currentUserData.expenses.find(exp => exp.id === expenseId);
         if (expense && expense.installments && expense.installments[parcelaIndex]) {
             expense.installments[parcelaIndex].paid = isChecked;
-            saveUserData(); // Salva a mudança no status da parcela
+            saveUserData();
             updateFinancialSummary();
             renderHistory();
         }
@@ -461,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (name === '' || isNaN(value) || value <= 0) {
                 isValid = false;
-                showMessage(homeMessage, 'Preencha todos os nomes e valores de produtos corretamente no modal.', 'error');
+                showMessage(homeMessage, 'Preencha todos os nomes e valores de produtos corretamente.', 'error');
                 return;
             }
             updatedProducts.push({ name, value });
@@ -496,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUserData.expenses[index].installments = newInstallments;
         currentUserData.expenses[index].date = new Date().toISOString();
 
-        saveUserData(); // Salva a alteração
+        saveUserData();
         updateFinancialSummary();
         renderHistory();
         editModal.classList.add('hidden');
@@ -507,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteExpense = (expenseId) => {
         if (confirm('Tem certeza que deseja excluir este gasto?')) {
             currentUserData.expenses = currentUserData.expenses.filter(exp => exp.id !== expenseId);
-            saveUserData(); // Salva após deletar
+            saveUserData();
             updateFinancialSummary();
             renderHistory();
             showMessage(homeMessage, 'Gasto excluído com sucesso!', 'success');
@@ -536,11 +537,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log("Dados premium salvos no servidor:", data.message);
                 } else {
                     console.error("Erro ao salvar dados premium no servidor:", data.message);
-                    // showMessage(homeMessage, "Erro ao salvar dados premium no servidor.", "error"); // Não sobrecarregar com mensagem a cada salvamento
                 }
             } catch (error) {
                 console.error('Erro de conexão ao salvar dados premium:', error);
-                // showMessage(homeMessage, "Erro de conexão ao salvar dados premium.", "error");
             }
         } else if (currentAccessCode) { // Usuário local (salva no localStorage)
             localStorage.setItem(`localUserData_${currentAccessCode}`, JSON.stringify(currentUserData));
@@ -587,22 +586,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        username: identifier, // 'identifier' é o username aqui
+                        username: identifier,
                         password: password
                     })
                 });
+
+                // Verifica se a resposta HTTP é OK (200-299). Se não for, lança um erro.
+                if (!response.ok) {
+                    const errorText = await response.text(); // Tenta ler o texto do erro
+                    throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+                }
 
                 const data = await response.json();
 
                 if (data.success) {
                     if (data.user.is_premium) {
-                        // Login Premium REALIZADO. Carrega TODOS os dados do usuário do backend.
                         currentUserData = {
                             financialSettings: data.user.financialSettings || {},
                             expenses: data.user.expenses || [],
                             isPremium: true
                         };
-                        // Garante a estrutura de installments para dados vindos do backend
                         currentUserData.expenses.forEach(expense => {
                             if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1 && (!expense.installments || expense.installments.length !== expense.numParcelas)) {
                                 expense.installments = Array.from({ length: expense.numParcelas }, () => ({ paid: false }));
@@ -629,7 +632,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (error) {
                 console.error('Erro na requisição de login premium:', error);
-                showMessage(premiumLoginMessage, 'Erro de conexão com o servidor. Verifique sua internet ou tente mais tarde.', 'error');
+                // Mensagem mais específica para o usuário
+                if (error.message.includes("Failed to fetch")) {
+                     showMessage(premiumLoginMessage, 'Erro de conexão com o servidor. O servidor pode estar offline ou a URL está incorreta.', 'error');
+                } else {
+                    showMessage(premiumLoginMessage, `Erro ao tentar login: ${error.message}`, 'error');
+                }
             }
         }
     };
@@ -658,9 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     navSettingsBtn.addEventListener('click', () => {
         if (currentUserData) {
-            // Se for um usuário local, carrega o código de acesso no campo de registro local
             registerAccessCodeInput.value = currentAccessCode || '';
-            // Se for um usuário premium, podemos desabilitar ou limpar o campo de código local
             if (currentUsername) {
                  registerAccessCodeInput.disabled = true;
                  registerAccessCodeInput.placeholder = "Logado como Premium (sem código local)";
@@ -735,12 +741,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (viraDia < 1 || viraDia > 31 || fechaDia < 1 || fechaDia > 31 || venceDia < 1 || venceDia > 31) {
-             showMessage(settingsMessage, 'Os dias devem estar entre 1 e 31.', 'error');
-             return;
-        }
-
-        // Atualiza currentUserData.financialSettings
         currentUserData.financialSettings = {
             cartaoViraDia: viraDia,
             faturaFechaDia: fechaDia,
@@ -748,8 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
             rendaMensal: renda,
         };
 
-        // Salva os dados (agora a função saveUserData é condicional)
-        await saveUserData(); // Chama saveUserData que enviará para o backend se premium
+        await saveUserData();
 
         showMessage(settingsMessage, 'Configurações salvas com sucesso!', 'success');
         setTimeout(() => {
@@ -877,7 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentUserData.expenses = [];
         }
         currentUserData.expenses.push(newExpense);
-        await saveUserData(); // Salva o estado atualizado dos gastos
+        await saveUserData();
 
         updateFinancialSummary();
         showMessage(homeMessage, 'Gasto registrado com sucesso!', 'success');

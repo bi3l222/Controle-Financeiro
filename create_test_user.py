@@ -1,6 +1,6 @@
 import sqlite3
 from werkzeug.security import generate_password_hash
-import json # Para salvar financial_settings e expenses como strings JSON
+import json
 
 DATABASE = 'database.db'
 
@@ -12,7 +12,6 @@ def get_db_connection():
 def create_test_premium_user(username, password):
     conn = get_db_connection()
     
-    # Verifica se o usuário já existe para evitar duplicatas
     existing_user = conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
     if existing_user:
         print(f"Usuário '{username}' já existe no banco de dados. Pulando a criação.")
@@ -21,7 +20,6 @@ def create_test_premium_user(username, password):
 
     password_hash = generate_password_hash(password)
     
-    # Configurações financeiras e gastos iniciais vazios para o novo usuário
     default_financial_settings = {}
     default_expenses = []
 
@@ -32,7 +30,7 @@ def create_test_premium_user(username, password):
         )
         conn.commit()
         print(f"Usuário Premium '{username}' criado com sucesso no banco de dados!")
-        print(f"Senha (hash): {password_hash}") # Apenas para você ver o hash
+        print(f"Senha (hash): {password_hash}")
     except sqlite3.IntegrityError:
         print(f"Erro: Usuário '{username}' já existe (apesar da verificação inicial, erro de integridade).")
     except Exception as e:

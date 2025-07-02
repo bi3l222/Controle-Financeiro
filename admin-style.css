@@ -1,7 +1,5 @@
-/* admin-style.css */
-
 .admin-main {
-    max-width: 700px; /* Um pouco menor que o main principal */
+    max-width: 700px;
 }
 
 .admin-section {
@@ -21,7 +19,7 @@
 }
 
 .admin-card {
-    background-color: #eef7ff; /* Fundo mais claro para os cards internos */
+    background-color: #eef7ff;
     border: 1px solid #bbdefb;
     padding: 20px;
     border-radius: 8px;
@@ -44,12 +42,9 @@
 }
 
 .logout-button {
-    background-color: #e74c3c; /* Vermelho para sair */
+    background-color: #e74c3c;
     margin-top: 30px;
 }
 .logout-button:hover {
     background-color: #c0392b;
 }
-
-/* Reutiliza o .message do style.css principal */
-/* .message.hidden { display: none; } */
