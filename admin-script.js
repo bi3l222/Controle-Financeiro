@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ADMIN_PASSWORD = 'senha_segura_admin'; 
 
     // URL DO SEU BACKEND PYTHON (MESMA DO script.js)
-    const BACKEND_API_URL = 'http://127.0.0.1:5000/api'; // <--- VERIFIQUE E MUDAR ISSO PARA A URL REAL DO SEU BACKEND!
+    const BACKEND_API_URL = 'https://controle-financeiro-n56whuf0g-gabriels-projects-e88afafe.vercel.app'; // <--- VERIFIQUE E MUDAR ISSO PARA A URL REAL DO SEU BACKEND!
 
     // --- Funções Auxiliares ---
     const showMessage = (element, msg, type = 'success') => {
