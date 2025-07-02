@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Controle Financeiro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>💎 Meu Controle Financeiro</h1>
+        <nav>
+            <button id="nav-home" class="active">📊 Início</button>
+            <button id="nav-history">📋 Histórico</button>
+            <button id="nav-settings">⚙️ Configurações</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="access-section" class="page active">
+            <h2>Acessar seu Controle</h2>
+            <p>Digite seu código de acesso para carregar seus dados.</p>
+            <div class="input-group">
+                <label for="access-code">Código de Acesso:</label>
+                <input type="text" id="access-code" placeholder="Digite seu código aqui" required>
+            </div>
+            <button id="load-data-btn">🔓 Carregar Meus Dados</button>
+            <p class="separator-text">ou</p>
+            <button id="start-new-btn">✨ Começar um Novo Controle</button>
+            <div id="access-message" class="message"></div>
+        </section>
+
+        <section id="settings-section" class="page">
+            <h2>Configurações Financeiras</h2>
+            <div class="input-group">
+                <label for="register-access-code">Crie seu Código de Acesso:</label>
+                <input type="text" id="register-access-code" placeholder="Ex: meucontrole123" required>
+                <small>Guarde bem este código para acessar seus dados!</small>
+            </div>
+            <div class="input-group">
+                <label for="cartao-vira-dia">Dia que o Cartão Vira (Melhor dia de compra):</label>
+                <input type="number" id="cartao-vira-dia" min="1" max="31" placeholder="Ex: 5" required>
+            </div>
+            <div class="input-group">
+                <label for="fatura-fecha-dia">Dia que a Fatura Fecha:</label>
+                <input type="number" id="fatura-fecha-dia" min="1" max="31" placeholder="Ex: 25" required>
+            </div>
+            <div class="input-group">
+                <label for="fatura-vence-dia">Dia de Vencimento da Fatura:</label>
+                <input type="number" id="fatura-vence-dia" min="1" max="31" placeholder="Ex: 10" required>
+            </div>
+            <div class="input-group">
+                <label for="renda-mensal">Renda Mensal (R$):</label>
+                <input type="number" id="renda-mensal" step="0.01" placeholder="Ex: 3500.00" required>
+            </div>
+            <button id="save-settings-btn">💾 Salvar Configurações</button>
+            <div id="settings-message" class="message"></div>
+        </section>
+
+        <section id="home-section" class="page">
+            <h2>Adicionar Novo Gasto</h2>
+
+            <div class="summary">
+                <h3>Resumo Financeiro</h3>
+                <p>Renda Mensal: <span id="summary-renda">R$ 0.00</span></p>
+                <p>Gastos Totais: <span id="summary-gastos">R$ 0.00</span></p>
+                <p>Orçamento Restante: <span id="summary-restante" class="positive">R$ 0.00</span></p>
+                <p>Cartão Vira Dia: <span id="summary-cartao-vira">--</span></p>
+                <p>Fatura Fecha Dia: <span id="summary-fatura-fecha">--</span></p>
+                <p>Fatura Vence Dia: <span id="summary-fatura-vence">--</span></p>
+            </div>
+
+            <div class="category-buttons">
+                <button class="category-btn" data-category="Mercado">🛒 Mercado</button>
+                <button class="category-btn" data-category="Farmácia">💊 Farmácia</button>
+                <button class="category-btn" data-category="Feira">🍎 Feira</button>
+                <button class="category-btn" data-category="Transporte">🚌 Transporte</button>
+                <button class="category-btn" data-category="Lazer">🎉 Lazer</button>
+                <button class="category-btn" data-category="Educação">📚 Educação</button>
+                <button class="category-btn" data-category="Moradia">🏠 Moradia</button>
+                <button class="category-btn" data-category="Contas">💡 Contas</button>
+                <button class="category-btn" data-category="Outros">📦 Outros</button>
+            </div>
+
+            <div id="expense-form" class="hidden">
+                <h3>Adicionar itens para <span id="selected-category-name"></span></h3>
+                <div class="input-group">
+                    <label for="payment-method">Forma de Pagamento:</label>
+                    <select id="payment-method">
+                        <option value="Credito">Cartão de Crédito</option>
+                        <option value="Debito">Cartão de Débito</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Pix">Pix</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+                <div class="input-group hidden" id="parcelas-group">
+                    <label for="num-parcelas">Número de Parcelas:</label>
+                    <input type="number" id="num-parcelas" min="1" max="60" value="1" required>
+                </div>
+                <div id="product-inputs">
+                    <div class="product-input-group">
+                        <input type="text" class="product-name" placeholder="Nome do Produto" required>
+                        <input type="number" class="product-value" step="0.01" placeholder="Valor (R$)" required>
+                        <button class="remove-product-btn">🗑️</button>
+                    </div>
+                </div>
+                <button id="add-product-btn">+ Adicionar Outro Produto</button>
+                <button id="save-expense-btn">➕ Registrar Gasto</button>
+                <div id="home-message" class="message"></div>
+            </div>
+        </section>
+
+        <section id="history-section" class="page">
+            <h2>Histórico de Compras</h2>
+            <div id="history-list">
+                <p id="no-history-message">Nenhum gasto registrado ainda.</p>
+                </div>
+        </section>
+
+        <div id="edit-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h3>Editar Gasto</h3>
+                <input type="hidden" id="edit-expense-id">
+                <div class="input-group">
+                    <label for="edit-category">Categoria:</label>
+                    <input type="text" id="edit-category" readonly>
+                </div>
+                 <div class="input-group">
+                    <label for="edit-payment-method">Forma de Pagamento:</label>
+                    <select id="edit-payment-method">
+                        <option value="Credito">Cartão de Crédito</option>
+                        <option value="Debito">Cartão de Débito</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Pix">Pix</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+                <div class="input-group hidden" id="edit-parcelas-group">
+                    <label for="edit-num-parcelas">Número de Parcelas:</label>
+                    <input type="number" id="edit-num-parcelas" min="1" max="60" value="1" required>
+                </div>
+                <div id="edit-product-inputs">
+                    </div>
+                <button id="add-edit-product-btn">+ Adicionar Outro Produto</button>
+                <button id="save-edited-expense-btn">✔️ Salvar Edições</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,793 @@
+:root {
+    --primary-color: #8e44ad; /* Roxo principal */
+    --primary-light: #9b59b6;
+    --primary-dark: #7d3c98;
+    --accent-color: #2ecc71; /* Verde para sucesso/positivo */
+    --accent-light: #58d68d;
+    --background-color: #f9f9f9;
+    --card-background: #ffffff;
+    --text-color: #333333;
+    --secondary-text-color: #666666;
+    --border-color: #e0e0e0;
+    --error-color: #e74c3c;
+    --success-color: #27ae60;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+header h1 {
+    margin: 0 0 10px 0;
+    font-size: 2.5em;
+    font-weight: 300;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+nav button {
+    background-color: var(--primary-light);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px; /* Bordas arredondadas */
+    cursor: pointer;
+    font-size: 1.05em;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+nav button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+nav button.active {
+    background-color: var(--primary-dark);
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+main {
+    padding: 25px;
+    max-width: 960px;
+    margin: 25px auto;
+    background-color: var(--card-background);
+    border-radius: 12px; /* Mais arredondado */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.page {
+    display: none;
+    padding: 20px;
+}
+
+.page.active {
+    display: block;
+}
+
+h2 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 35px;
+    font-size: 2em;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background-color: var(--accent-color);
+    border-radius: 2px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--secondary-text-color);
+    font-size: 0.95em;
+}
+
+.input-group input[type="text"],
+.input-group input[type="number"],
+.input-group select {
+    width: calc(100% - 24px); /* Ajusta para padding e borda */
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px; /* Mais arredondado */
+    font-size: 1em;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.2); /* Sombra suave ao focar */
+    outline: none;
+}
+
+.input-group small {
+    color: var(--secondary-text-color);
+    font-size: 0.8em;
+    margin-top: 5px;
+    display: block;
+}
+
+button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    display: block;
+    width: fit-content;
+    margin: 20px auto 0 auto; /* Centraliza botões principais */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+}
+
+#start-new-btn {
+    background-color: #27ae60; /* Verde para "Começar novo" */
+}
+#start-new-btn:hover {
+    background-color: #2ecc71;
+}
+
+#load-data-btn {
+    background-color: #3498db; /* Azul para carregar */
+}
+#load-data-btn:hover {
+    background-color: #2980b9;
+}
+
+.separator-text {
+    text-align: center;
+    margin: 25px 0;
+    color: var(--secondary-text-color);
+    font-weight: bold;
+    position: relative;
+}
+.separator-text::before, .separator-text::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background-color: var(--border-color);
+}
+.separator-text::before { left: 0; }
+.separator-text::after { right: 0; }
+
+.message {
+    margin-top: 25px;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    font-size: 0.95em;
+}
+
+.message.success {
+    background-color: #d4edda;
+    color: var(--success-color);
+    border: 1px solid #c3e6cb;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    color: var(--error-color);
+    border: 1px solid #f5c6cb;
+}
+
+/* Home Section Styles */
+.summary {
+    background-color: #f0f8ff; /* Azul claro para o resumo */
+    border: 1px solid #cceeff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 35px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.summary h3 {
+    margin-top: 0;
+    color: var(--primary-dark);
+    font-size: 1.5em;
+    border-bottom: 1px dashed #e0e0e0;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+}
+
+.summary p {
+    margin: 10px 0;
+    font-size: 1.1em;
+    color: var(--text-color);
+}
+
+.summary p span {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.summary p .positive {
+    color: var(--accent-color);
+}
+
+.summary p .negative {
+    color: var(--error-color);
+}
+
+.category-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 35px;
+}
+
+.category-btn {
+    background-color: var(--primary-light);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    min-width: 130px;
+    text-align: center;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.category-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-3px);
+}
+
+#expense-form {
+    background-color: #fefefe;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+    border: 1px solid var(--border-color);
+}
+
+#expense-form h3 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+    font-size: 1.8em;
+}
+
+#expense-form h3 span {
+    font-weight: bold;
+    color: var(--primary-dark);
+}
+
+.product-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.product-input-group input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 0.95em;
+}
+
+.product-input-group .product-name {
+    flex: 2; /* Nome do produto ocupa mais espaço */
+}
+
+.remove-product-btn, .edit-product-btn {
+    background-color: #e74c3c;
+    color: white;
+    padding: 8px;
+    font-size: 0.9em;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%; /* Botão redondo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0; /* Override default button margin */
+    box-shadow: none; /* Remove box-shadow */
+}
+
+.remove-product-btn:hover, .edit-product-btn:hover {
+    background-color: #c0392b;
+    transform: scale(1.05);
+}
+
+#add-product-btn, #add-edit-product-btn {
+    background-color: #3498db;
+    width: fit-content;
+    padding: 10px 20px;
+    margin: 15px auto;
+}
+#add-product-btn:hover, #add-edit-product-btn:hover {
+    background-color: #2980b9;
+}
+
+#save-expense-btn, #save-edited-expense-btn {
+    background-color: var(--accent-color);
+    margin-top: 25px;
+}
+#save-expense-btn:hover, #save-edited-expense-btn:hover {
+    background-color: var(--success-color);
+}
+
+/* History Section Styles */
+#history-list {
+    margin-top: 25px;
+}
+
+.expense-item {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.expense-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background-color: var(--primary-light); /* Linha lateral colorida */
+}
+
+.expense-item h3 {
+    margin-top: 0;
+    color: var(--primary-dark);
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    padding-left: 10px; /* Espaço para a linha lateral */
+}
+
+.expense-item p {
+    margin: 5px 0;
+    color: var(--secondary-text-color);
+}
+
+.expense-item p strong {
+    color: var(--text-color);
+}
+
+.expense-item ul {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0 0 0;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 15px;
+}
+
+.expense-item ul li {
+    background-color: #fefefe;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.expense-item ul li span {
+    font-size: 1em;
+}
+
+.expense-item .item-total {
+    font-weight: bold;
+    color: var(--accent-color);
+    font-size: 1.2em;
+    margin-top: 15px;
+    text-align: right;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+.history-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+.history-actions button {
+    margin: 0;
+    padding: 8px 15px;
+    font-size: 0.9em;
+    border-radius: 5px;
+    box-shadow: none;
+}
+
+.history-actions .edit-btn {
+    background-color: #f39c12; /* Laranja para editar */
+}
+.history-actions .edit-btn:hover {
+    background-color: #e67e22;
+}
+
+.history-actions .delete-btn {
+    background-color: #e74c3c; /* Vermelho para deletar */
+}
+.history-actions .delete-btn:hover {
+    background-color: #c0392b;
+}
+
+#no-history-message {
+    text-align: center;
+    color: var(--secondary-text-color);
+    margin-top: 50px;
+    font-size: 1.1em;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: var(--card-background);
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    position: relative;
+    max-height: 90vh; /* Limita a altura do modal */
+    overflow-y: auto; /* Adiciona scroll se conteúdo for grande */
+}
+
+.modal-content h3 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 25px;
+    font-size: 1.8em;
+}
+
+.modal-content .close-button {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.modal-content .close-button:hover {
+    color: var(--error-color);
+}
+
+.modal-content .product-input-group {
+    margin-bottom: 10px; /* Espaçamento menor dentro do modal */
+}
+.modal-content .product-input-group input {
+    width: calc(100% - 10px - 35px); /* Ajusta para botão X */
+}
+
+#edit-product-inputs .product-input-group {
+    margin-bottom: 15px;
+    border: 1px dashed var(--border-color);
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #fefefe;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2em;
+    }
+    nav {
+        flex-wrap: wrap;
+        padding: 0 10px;
+    }
+    nav button {
+        padding: 10px 20px;
+        font-size: 0.95em;
+        flex-grow: 1; /* Permite que os botões cresçam */
+    }
+    main {
+        margin: 15px;
+        padding: 15px;
+    }
+    h2 {
+        font-size: 1.6em;
+        margin-bottom: 25px;
+    }
+    .input-group input, .input-group select {
+        width: calc(100% - 20px); /* Ajuste para padding menor */
+        padding: 10px;
+    }
+    button {
+        padding: 12px 25px;
+        font-size: 1em;
+    }
+    .category-buttons {
+        gap: 10px;
+    }
+    .category-btn {
+        padding: 12px 18px;
+        font-size: 1em;
+        min-width: unset;
+        flex: 1 1 45%; /* Duas colunas em telas menores */
+    }
+    .product-input-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .product-input-group input {
+        width: 100%;
+    }
+    .product-input-group .remove-product-btn {
+        align-self: flex-end; /* Alinha o botão X para a direita */
+    }
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.8em;
+    }
+    nav {
+        flex-direction: column;
+        gap: 10px;
+    }
+    nav button {
+        width: 90%;
+        margin: 0 auto;
+    }
+    main {
+        margin: 10px;
+        padding: 10px;
+    }
+    h2 {
+        font-size: 1.4em;
+    }
+    .summary p {
+        font-size: 1em;
+    }
+    .category-btn {
+        flex: 1 1 100%; /* Uma coluna em telas muito pequenas */
+    }
+    .product-input-group .remove-product-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8em;
+        padding: 5px;
+    }
+    .expense-item h3 {
+        font-size: 1.3em;
+    }
+    .expense-item ul li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+
+/* Checkbox de Pagamento no Histórico */
+.checkbox-container {
+    display: inline-block; /* Ou flex, dependendo do layout desejado */
+    position: relative;
+    padding-left: 25px; /* Espaço para o checkbox customizado */
+    margin-bottom: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    color: var(--secondary-text-color);
+}
+
+/* Esconde o checkbox padrão do navegador */
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Cria um checkbox customizado */
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 18px;
+    width: 18px;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    border-radius: 4px; /* Bordas levemente arredondadas */
+}
+
+/* Ao passar o mouse, muda a cor de fundo do checkbox */
+.checkbox-container:hover input ~ .checkmark {
+    background-color: #ccc;
+}
+
+/* Quando o checkbox é clicado/marcado, muda a cor de fundo */
+.checkbox-container input:checked ~ .checkmark {
+    background-color: var(--accent-color); /* Verde para "pago" */
+    border-color: var(--accent-dark);
+}
+
+/* Cria o ícone de "check" (escondido por padrão) */
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Mostra o ícone de "check" quando marcado */
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+/* Estilo do ícone de "check" */
+.checkbox-container .checkmark:after {
+    left: 6px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+/* Adicione isso ao seu style.css */
+
+.month-header {
+    background-color: var(--primary-color); /* Cor de fundo para o cabeçalho do mês */
+    color: white;
+    padding: 15px 20px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    font-size: 1.8em;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    position: sticky; /* Fixa o cabeçalho do mês ao rolar */
+    top: 0;
+    z-index: 50; /* Garante que fique acima de outros elementos */
+}
+
+.category-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #fcfcfc; /* Fundo mais claro para cada seção de categoria */
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.category-header {
+    color: var(--primary-dark); /* Cor para o nome da categoria */
+    font-size: 1.4em;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 10px;
+}
+
+.expense-item-small {
+    background-color: var(--card-background); /* Fundo branco para o item individual */
+    padding: 12px 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 0.95em;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    cursor: pointer; /* Indica que é clicável para edição */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.expense-item-small:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.expense-item-small p {
+    margin: 4px 0;
+}
+
+.expense-item-small p strong {
+    color: var(--text-color);
+}
+
+.expense-item-small ul {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0 0;
+}
+
+.expense-item-small ul li {
+    padding: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dotted #f0f0f0; /* Linha sutil entre produtos */
+}
+.expense-item-small ul li:last-child {
+    border-bottom: none;
+}
+
+/* Esconde os botões de editar/excluir no histórico normal,
+   já que o clique no item abrirá o modal de edição */
+.history-actions {
+    display: none;
+}
