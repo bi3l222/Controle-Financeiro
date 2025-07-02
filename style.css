@@ -791,3 +791,133 @@ button:hover {
 .history-actions {
     display: none;
 }
+
+/* Adicione este bloco no final do seu style.css */
+
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    background-color: #f0f0f0; /* Um fundo neutro para o rodapé */
+    border-top: 1px solid #e0e0e0;
+    color: #555;
+    font-size: 0.9em;
+}
+
+footer a {
+    color: var(--primary-color); /* Usa a cor principal para os links do rodapé */
+    text-decoration: none;
+    font-weight: bold;
+    padding: 0 10px;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* Estilos gerais para páginas de conteúdo (Termos/Copyright) */
+.content-page {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: var(--card-background);
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+.content-page h1 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.2em;
+}
+.content-page h3 {
+    color: var(--primary-color);
+    margin-top: 25px;
+    margin-bottom: 15px;
+    font-size: 1.5em;
+}
+.content-page p {
+    margin-bottom: 15px;
+    line-height: 1.8;
+    color: var(--text-color);
+}
+.content-page a {
+    color: #3498db; /* Azul para links em conteúdo */
+    text-decoration: none;
+}
+.content-page a:hover {
+    text-decoration: underline;
+}
+.content-page ul {
+    list-style: disc; /* Bolinhas para listas */
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+.content-page ul li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+/* Estilo para o botão de navegação nas páginas de conteúdo */
+.nav-button {
+    background-color: #3498db; /* Azul */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1em;
+    text-decoration: none; /* Remove sublinhado padrão */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: inline-block; /* Para que o padding funcione */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.nav-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+/* @media queries para responsividade do rodapé e páginas de conteúdo */
+@media (max-width: 768px) {
+    .content-page {
+        margin: 20px auto;
+        padding: 20px;
+    }
+    .content-page h1 {
+        font-size: 1.8em;
+    }
+    .content-page h3 {
+        font-size: 1.3em;
+    }
+    footer {
+        padding: 15px;
+    }
+    footer a {
+        padding: 0 8px;
+        font-size: 0.8em;
+    }
+}
+
+@media (max-width: 480px) {
+    .content-page {
+        margin: 10px auto;
+        padding: 15px;
+    }
+    .content-page h1 {
+        font-size: 1.6em;
+    }
+    .content-page h3 {
+        font-size: 1.2em;
+    }
+    footer p {
+        flex-direction: column;
+        gap: 5px;
+    }
+    footer a {
+        display: block;
+        width: fit-content;
+        margin: 5px auto;
+    }
+}
