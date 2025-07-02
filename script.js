@@ -13,6 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadDataBtn = document.getElementById('load-data-btn');
     const startNewBtn = document.getElementById('start-new-btn');
     const accessMessage = document.getElementById('access-message');
+    const accessPremiumWhatsappBtn = document.getElementById('access-premium-whatsapp-btn'); // Novo: Botão para WhatsApp
+
+    const premiumUsernameInput = document.getElementById('premium-username'); // Novo
+    const premiumPasswordInput = document.getElementById('premium-password'); // Novo
+    const loginPremiumBtn = document.getElementById('login-premium-btn'); // Novo
+    const premiumLoginMessage = document.getElementById('premium-login-message'); // Novo
 
     const registerAccessCodeInput = document.getElementById('register-access-code');
     const cartaoViraDiaInput = document.getElementById('cartao-vira-dia');
@@ -56,9 +62,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveEditedExpenseBtn = document.getElementById('save-edited-expense-btn');
 
 
-    // --- Variáveis de Dados (persistidas via localStorage) ---
-    let currentUserData = null;
-    let currentAccessCode = null;
+    // --- Variáveis de Dados (persistidas via localStorage ou carregadas do backend) ---
+    // currentUserData agora pode vir do backend para premium users
+    let currentUserData = null; 
+    // currentAccessCode é para o acesso local (gratuito)
+    let currentAccessCode = null; 
+    // currentUsername armazena o nome de usuário se o login for premium
+    let currentUsername = null; 
+
+    // --- Configurações do Plano Premium ---
+    const PREMIUM_PRICE = "19,90";
+    const WHATSAPP_PHONE = "551196693652"; // Seu número de WhatsApp com código do país (55) e DDD (11)
+    
+    // URL DO SEU BACKEND PYTHON (MUITO IMPORTANTE: SUBSTITUA PELA URL REAL!)
+    // Ex: 'https://seuhosting.com/api.py' ou 'http://localhost:5000/api' se testando localmente
+    const BACKEND_API_URL = 'http://127.0.0.1:5000/api'; // <--- MUDAR ISSO PARA A URL REAL DO SEU BACKEND!
 
     // --- Funções Auxiliares ---
 
@@ -66,9 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const showMessage = (element, msg, type = 'success') => {
         element.textContent = msg;
         element.className = `message ${type}`;
+        element.classList.remove('hidden');
         setTimeout(() => {
             element.textContent = '';
-            element.className = 'message';
+            element.className = 'message hidden';
         }, 3000);
     };
 
@@ -79,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById(pageId).classList.add('active');
 
-        // Atualiza o estado ativo da navegação
         document.querySelectorAll('nav button').forEach(btn => {
             btn.classList.remove('active');
         });
@@ -96,26 +114,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calcula a data de vencimento da parcela em um formato de objeto Date
     const calculateParcelaDueDate = (purchaseDate, faturaFechaDia, installmentNumber = 0) => {
         const pDate = new Date(purchaseDate);
-        let dueDate = new Date(pDate); // Começa com a data da compra
+        let dueDate = new Date(pDate);
         
-        // Ajusta o mês de lançamento da primeira parcela
-        // Se a compra foi feita DEPOIS do dia de FECHAMENTO DA FATURA do mês atual,
-        // a primeira parcela (e as seguintes) começam no PRÓXIMO mês.
-        if (pDate.getDate() > faturaFechaDia) {
+        if (faturaFechaDia === undefined || faturaFechaDia === null) {
+            // console.warn("Dia de fechamento da fatura não configurado. As parcelas serão calculadas com base no mês da compra.");
+        } else if (pDate.getDate() > faturaFechaDia) {
             dueDate.setMonth(pDate.getMonth() + 1);
         }
         
-        // Adiciona os meses das parcelas
         dueDate.setMonth(dueDate.getMonth() + installmentNumber);
         
-        // Define o dia do vencimento da fatura
-        const vencimentoDia = currentUserData.financialSettings?.faturaVenceDia || 1; // Pega o dia de vencimento das configs
-        dueDate.setDate(vencimentoDia); // Define o dia da parcela para o dia do vencimento
+        const vencimentoDia = currentUserData.financialSettings?.faturaVenceDia || 1;
+        dueDate.setDate(vencimentoDia);
 
-        // Ajusta para meses com menos dias (ex: fevereiro)
         if (dueDate.getDate() !== vencimentoDia) {
-            dueDate.setDate(0); // Volta para o último dia do mês anterior e tenta novamente
-            dueDate.setDate(vencimentoDia); // Isso pode fazer com que caia no mês seguinte se o dia for maior que os dias do mês
+            dueDate.setDate(0);
+            dueDate.setDate(vencimentoDia);
         }
 
         return dueDate;
@@ -148,14 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (expense.paymentMethod === 'Credito') {
                 const valorPorParcela = expenseTotal / expense.numParcelas;
                 for (let i = 0; i < expense.numParcelas; i++) {
-                    const parcelaData = expense.installments[i];
+                    const parcelaData = expense.installments ? expense.installments[i] : { paid: false };
                     const parcelaDueDate = calculateParcelaDueDate(expense.date, faturaFechaDia, i);
                     
                     if (parcelaDueDate.getMonth() === mesAtual && parcelaDueDate.getFullYear() === anoAtual && !parcelaData.paid) {
                         totalGastosMesAtual += valorPorParcela;
                     }
                 }
-            } else { // Débito, Dinheiro, Pix, Outro (sempre à vista, considera no mês da compra)
+            } else {
                 const purchaseDate = new Date(expense.date);
                 if (purchaseDate.getMonth() === mesAtual && purchaseDate.getFullYear() === anoAtual) {
                     totalGastosMesAtual += expenseTotal;
@@ -185,15 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
             noHistoryMessage.classList.add('hidden');
         }
 
-        // Estrutura para agrupar gastos por mês
-        const groupedExpenses = {}; // { 'YYYY-MM': { 'Category': [expense, expense], ... } }
+        const groupedExpenses = {};
         const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
         currentUserData.expenses.forEach(expense => {
             const faturaFechaDia = currentUserData.financialSettings?.faturaFechaDia;
 
             if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1) {
-                // Para compras parceladas, criar uma entrada para cada parcela
                 for (let i = 0; i < expense.numParcelas; i++) {
                     const parcelaDueDate = calculateParcelaDueDate(expense.date, faturaFechaDia, i);
                     const monthKey = `${parcelaDueDate.getFullYear()}-${parcelaDueDate.getMonth().toString().padStart(2, '0')}`;
@@ -206,7 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         groupedExpenses[monthKey][expense.category] = [];
                     }
 
-                    // Cria um objeto "parcela" para ser exibido, referenciando o gasto original
                     groupedExpenses[monthKey][expense.category].push({
                         type: 'parcela',
                         originalExpenseId: expense.id,
@@ -214,18 +225,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         category: expense.category,
                         paymentMethod: expense.paymentMethod,
                         value: parcelaValue,
-                        isPaid: expense.installments[i]?.paid || false,
-                        originalPurchaseDate: expense.date, // Data da compra original
-                        parcelaDueDate: parcelaDueDate, // Data de vencimento da parcela
+                        isPaid: expense.installments ? expense.installments[i]?.paid : false,
+                        originalPurchaseDate: expense.date,
+                        parcelaDueDate: parcelaDueDate,
                         parcelaNumber: i + 1,
                         totalParcelas: expense.numParcelas,
-                        products: expense.products // Mantém os produtos originais para referência
+                        products: expense.products
                     });
                 }
-            } else { // Gastos à vista (Crédito à vista, Débito, Dinheiro, Pix)
+            } else {
                 const launchDate = expense.paymentMethod === 'Credito' 
-                                   ? calculateParcelaDueDate(expense.date, faturaFechaDia, 0) // Crédito à vista
-                                   : new Date(expense.date); // Outros à vista
+                                   ? calculateParcelaDueDate(expense.date, faturaFechaDia, 0)
+                                   : new Date(expense.date);
 
                 const monthKey = `${launchDate.getFullYear()}-${launchDate.getMonth().toString().padStart(2, '0')}`;
                 
@@ -248,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Ordenar os meses (chaves YYYY-MM) do mais recente para o mais antigo
         const sortedMonthKeys = Object.keys(groupedExpenses).sort((a, b) => {
             return new Date(b).getTime() - new Date(a).getTime();
         });
@@ -268,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             historyList.appendChild(monthHeader);
 
             const monthData = groupedExpenses[monthKey];
-            const sortedCategories = Object.keys(monthData).sort(); // Ordena categorias alfabeticamente
+            const sortedCategories = Object.keys(monthData).sort();
 
             sortedCategories.forEach(categoryName => {
                 const categorySection = document.createElement('div');
@@ -280,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 categorySection.appendChild(categoryHeader);
 
                 const categoryExpenses = monthData[categoryName].sort((a, b) => {
-                    // Ordena os gastos/parcelas dentro da categoria pela data original da compra
                     const dateA = a.type === 'parcela' ? new Date(a.originalPurchaseDate) : new Date(a.originalPurchaseDate);
                     const dateB = b.type === 'parcela' ? new Date(b.originalPurchaseDate) : new Date(b.originalPurchaseDate);
                     return dateB.getTime() - dateA.getTime();
@@ -288,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 categoryExpenses.forEach(item => {
                     const expenseItemDiv = document.createElement('div');
-                    expenseItemDiv.classList.add('expense-item-small'); // Uma classe para itens dentro do agrupamento
+                    expenseItemDiv.classList.add('expense-item-small');
 
                     const originalPurchaseDate = new Date(item.originalPurchaseDate).toLocaleString('pt-BR');
 
@@ -304,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="checkmark"></span> Paga
                             </label>
                         `;
-                    } else { // gasto_avista
+                    } else {
                         itemDetails = `
                             <p><strong>Item:</strong> ${item.products.map(p => p.name).join(', ')}</p>
                             <p><strong>Valor:</strong> ${formatCurrency(item.value)}</p>
@@ -319,55 +328,31 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        addHistoryActionListeners(); // Ainda precisamos dos botões de edição/exclusão da compra original
-        addParcelaPaidListeners(); // Adiciona listeners para os checkboxes de pagamento
+        addHistoryActionListeners();
+        addParcelaPaidListeners();
+        // Não atualiza status do PDF aqui, pois PDF é apenas Premium agora
     };
 
     // Adiciona listeners para os botões de editar e excluir no histórico
     const addHistoryActionListeners = () => {
-        // Agora, os botões de editar/excluir são para a COMPRA ORIGINAL, não para cada parcela.
-        // Vamos colocá-los no cabeçalho do mês, ou em um resumo do gasto principal se preferir.
-        // Por enquanto, vou manter a lógica de que o botão de edição/exclusão se refere ao gasto como um todo
-        // e ele precisa ser encontrado pelo ID original do expense.
-        // Se a lógica atual é que eles aparecem ao lado de cada item, então é preciso garantir que o ID se refira ao gasto original.
-
-        // Para evitar duplicação dos botões se eles estiverem no item da parcela
-        // vamos adicionar um único botão de editar/excluir para cada GASTO COMPLETO,
-        // talvez no cabeçalho da categoria, ou em um resumo do gasto total no mês.
-        // Por simplicidade, vou manter a lógica de que o botão edita o gasto original pelo ID,
-        // mas é preciso que o elemento pai desses botões tenha o data-id correto.
-
-        // Refatorando: Os botões de editar/excluir devem estar associados ao GASTO ORIGINAL (e não a cada parcela).
-        // A exibição no histórico está por mês/categoria/item.
-        // Vamos fazer com que um clique em um item de compra (parcelada ou à vista)
-        // abra o modal de edição do GASTO ORIGINAL.
-
-        // Removendo os botões de 'editar'/'excluir' de cada 'expense-item-small' no renderHistory
-        // e adicionando-os na lógica do item principal no histórico, se necessário, ou apenas no modal de edição.
-        // Para a clareza do pedido, vamos fazer com que o clique no item do histórico abra o modal de edição.
-
-        // Não precisamos mais disso aqui se os botões são adicionados dinamicamente na função renderHistory
-        // document.querySelectorAll('.edit-btn').forEach(button => {
-        //     button.addEventListener('click', (e) => openEditModal(parseInt(e.target.dataset.id)));
-        // });
-        // document.querySelectorAll('.delete-btn').forEach(button => {
-        //     button.addEventListener('click', (e) => deleteExpense(parseInt(e.target.dataset.id)));
-        // });
-
-        // Vamos adicionar um listener genérico nos 'expense-item-small' para abrir o modal de edição do gasto ORIGINAL
         document.querySelectorAll('.expense-item-small').forEach(itemDiv => {
-            // Evita adicionar múltiplos listeners se a função for chamada várias vezes
-            if (!itemDiv.dataset.listenerAdded) {
-                const originalExpenseId = itemDiv.querySelector('[data-expense-id]')?.dataset.expenseId || null;
-                if (originalExpenseId) {
-                    itemDiv.addEventListener('click', () => {
-                        // Não abre o modal se for um clique no checkbox
-                        if (event.target.type !== 'checkbox' && event.target.tagName !== 'LABEL' && event.target.tagName !== 'SPAN') {
-                           openEditModal(parseInt(originalExpenseId));
-                        }
-                    });
-                     itemDiv.dataset.listenerAdded = 'true'; // Marca que o listener foi adicionado
+            if (itemDiv.dataset.listenerAdded) {
+                const oldListener = itemDiv.__clickListener;
+                if (oldListener) {
+                    itemDiv.removeEventListener('click', oldListener);
                 }
+            }
+
+            const originalExpenseId = itemDiv.querySelector('[data-expense-id]')?.dataset.expenseId || null;
+            if (originalExpenseId) {
+                const newListener = (event) => {
+                    if (!event.target.closest('.checkbox-container')) {
+                       openEditModal(parseInt(originalExpenseId));
+                    }
+                };
+                itemDiv.addEventListener('click', newListener);
+                itemDiv.dataset.listenerAdded = 'true';
+                itemDiv.__clickListener = newListener;
             }
         });
     };
@@ -375,11 +360,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adiciona listeners para os checkboxes de pagamento de parcela
     const addParcelaPaidListeners = () => {
         document.querySelectorAll('.checkbox-container input[type="checkbox"]').forEach(checkbox => {
-            checkbox.addEventListener('change', (e) => {
+            if (checkbox.dataset.listenerAdded) {
+                const oldListener = checkbox.__changeListener;
+                if (oldListener) {
+                    checkbox.removeEventListener('change', oldListener);
+                }
+            }
+
+            const newListener = (e) => {
                 const expenseId = parseInt(e.target.dataset.expenseId);
                 const parcelaIndex = parseInt(e.target.dataset.parcelaIndex);
                 markParcelaPaid(expenseId, parcelaIndex, e.target.checked);
-            });
+            };
+            checkbox.addEventListener('change', newListener);
+            checkbox.dataset.listenerAdded = 'true';
+            checkbox.__changeListener = newListener;
         });
     };
 
@@ -389,8 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (expense && expense.installments && expense.installments[parcelaIndex]) {
             expense.installments[parcelaIndex].paid = isChecked;
             saveUserData();
-            updateFinancialSummary(); // Atualiza o resumo após marcar/desmarcar
-            renderHistory(); // Re-renderiza o histórico para refletir a mudança
+            updateFinancialSummary();
+            renderHistory();
         }
     };
 
@@ -407,7 +402,6 @@ document.addEventListener('DOMContentLoaded', () => {
         editCategoryInput.value = expenseToEdit.category;
         editPaymentMethodSelect.value = expenseToEdit.paymentMethod || 'Outro';
         
-        // Lógica para mostrar/esconder campo de parcelas no modal de edição
         if (editPaymentMethodSelect.value === 'Credito') {
             editParcelasGroup.classList.remove('hidden');
             editNumParcelasInput.value = expenseToEdit.numParcelas || 1;
@@ -416,7 +410,6 @@ document.addEventListener('DOMContentLoaded', () => {
             editNumParcelasInput.value = 1;
         }
 
-        // Limpa e preenche os produtos no modal
         editProductInputsContainer.innerHTML = '';
         expenseToEdit.products.forEach((product) => {
             addProductInputToModal(product.name, product.value, true);
@@ -491,12 +484,10 @@ document.addEventListener('DOMContentLoaded', () => {
              return;
         }
         
-        // Atualiza ou cria a estrutura de parcelas (para manter status de pago)
         let newInstallments = [];
         if (newPaymentMethod === 'Credito' && newNumParcelas > 1) {
             const oldExpense = currentUserData.expenses[index];
             for (let i = 0; i < newNumParcelas; i++) {
-                // Tenta manter o status de pago de parcelas antigas, se existirem e couberem no novo número
                 const oldInstallment = oldExpense.installments && oldExpense.installments[i];
                 newInstallments.push({ paid: oldInstallment ? oldInstallment.paid : false });
             }
@@ -505,8 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUserData.expenses[index].products = updatedProducts;
         currentUserData.expenses[index].paymentMethod = newPaymentMethod;
         currentUserData.expenses[index].numParcelas = newNumParcelas;
-        currentUserData.expenses[index].installments = newInstallments; // Atualiza as parcelas
-        currentUserData.expenses[index].date = new Date().toISOString(); // Atualiza a data para indicar edição
+        currentUserData.expenses[index].installments = newInstallments;
+        currentUserData.expenses[index].date = new Date().toISOString();
 
         saveUserData();
         updateFinancialSummary();
@@ -527,58 +518,107 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    // Salva os dados do usuário no localStorage
+    // Salva os dados do usuário.
+    // Se for um usuário local, salva no localStorage.
+    // Se for um usuário premium, salvaria no backend (não implementado aqui, apenas simulação).
     const saveUserData = () => {
-        if (currentAccessCode && currentUserData) {
-            localStorage.setItem(`userData_${currentAccessCode}`, JSON.stringify(currentUserData));
+        if (currentUsername) { // Usuário premium logado
+            // AQUI VOCÊ ENVIARIA OS DADOS PARA O SEU BACKEND PYTHON (SALVAR/ATUALIZAR GASTOS)
+            // fetch(BACKEND_API_URL + '/save_expenses', { ... })
+            // Por enquanto, apenas simula que os dados premium seriam salvos no servidor.
+            console.log("Dados de usuário premium seriam salvos no servidor agora.");
+            // Você pode até mesmo salvar os dados no localStorage como backup para premium users
+            // mas o ideal é que a fonte da verdade seja o banco de dados.
+            localStorage.setItem(`premiumUserData_${currentUsername}`, JSON.stringify(currentUserData));
+
+        } else if (currentAccessCode) { // Usuário local
+            localStorage.setItem(`localUserData_${currentAccessCode}`, JSON.stringify(currentUserData));
         }
     };
 
-    // Carrega os dados do usuário do localStorage
-    const loadUserData = (accessCode) => {
-        const data = localStorage.getItem(`userData_${accessCode}`);
-        if (data) {
-            currentUserData = JSON.parse(data);
-            if (!currentUserData.expenses) {
-                currentUserData.expenses = [];
+    // Carrega os dados do usuário.
+    // Se for um usuário local, carrega do localStorage.
+    // Se for um usuário premium, carregaria do backend (não implementado aqui, apenas simulação).
+    const loadUserData = (type, identifier) => {
+        if (type === 'local') {
+            const data = localStorage.getItem(`localUserData_${identifier}`);
+            if (data) {
+                currentUserData = JSON.parse(data);
+                if (!currentUserData.expenses) { currentUserData.expenses = []; }
+                if (!currentUserData.financialSettings) { currentUserData.financialSettings = {}; }
+                currentUserData.expenses.forEach(expense => {
+                    if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1 && (!expense.installments || expense.installments.length !== expense.numParcelas)) {
+                        expense.installments = Array.from({ length: expense.numParcelas }, () => ({ paid: false }));
+                    } else if (expense.numParcelas === 1 && expense.installments) {
+                        delete expense.installments;
+                    }
+                });
+                currentUserData.isPremium = false; // Usuário local não é premium
+                currentAccessCode = identifier;
+                currentUsername = null; // Garante que não é um usuário premium logado
+                showMessage(accessMessage, 'Dados locais carregados com sucesso!', 'success');
+                setTimeout(() => {
+                    showPage('home-section');
+                    updateFinancialSummary();
+                    renderHistory();
+                }, 500);
+            } else {
+                showMessage(accessMessage, 'Código de acesso não encontrado. Crie um novo controle.', 'error');
+                currentUserData = null;
+                currentAccessCode = null;
+                currentUsername = null;
             }
-            if (!currentUserData.financialSettings) {
-                currentUserData.financialSettings = {};
-            }
-            // Garante que cada gasto parcelado tenha a propriedade installments
-            currentUserData.expenses.forEach(expense => {
-                if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1 && (!expense.installments || expense.installments.length !== expense.numParcelas)) {
-                    // Se não tiver installments ou o número não bater, recria
-                    expense.installments = Array.from({ length: expense.numParcelas }, () => ({ paid: false }));
-                } else if (expense.numParcelas === 1 && expense.installments) {
-                    // Para compras à vista, remove installments desnecessários
-                    delete expense.installments;
-                }
-            });
+        } else if (type === 'premium') {
+            // AQUI OCORRERIA A CHAMADA PARA O SEU BACKEND PYTHON PARA AUTENTICAR E CARREGAR DADOS
+            // Exemplo de como seria a chamada (você implementará isso no loginPremiumBtn click):
+            // fetch(BACKEND_API_URL + '/login', { ... }).then(response => response.json()).then(data => { ... });
+            
+            // Para o propósito deste frontend, vamos simular que o login premium já foi feito no backend
+            // e que temos os dados do usuário (por exemplo, de um localstorage simulado).
+            const data = localStorage.getItem(`premiumUserData_${identifier}`); // Identificador aqui é o username
+            const isPremiumOnServer = localStorage.getItem(`serverPremiumStatus_${identifier}`) === 'true'; // Simula status do servidor
 
-            currentAccessCode = accessCode;
-            showMessage(accessMessage, 'Dados carregados com sucesso!', 'success');
-            setTimeout(() => {
-                showPage('home-section');
-                updateFinancialSummary();
-                renderHistory();
-            }, 500);
-        } else {
-            showMessage(accessMessage, 'Código de acesso não encontrado. Tente novamente ou crie um novo.', 'error');
-            currentUserData = null;
-            currentAccessCode = null;
+            if (data && isPremiumOnServer) { // Simula que os dados premium existem e estão ativos no servidor
+                currentUserData = JSON.parse(data);
+                 if (!currentUserData.expenses) { currentUserData.expenses = []; }
+                 if (!currentUserData.financialSettings) { currentUserData.financialSettings = {}; }
+                 // Garante a estrutura de installments
+                 currentUserData.expenses.forEach(expense => {
+                    if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1 && (!expense.installments || expense.installments.length !== expense.numParcelas)) {
+                        expense.installments = Array.from({ length: expense.numParcelas }, () => ({ paid: false }));
+                    } else if (expense.numParcelas === 1 && expense.installments) {
+                        delete expense.installments;
+                    }
+                });
+                currentUserData.isPremium = true;
+                currentUsername = identifier;
+                currentAccessCode = null; // Garante que não é um usuário local logado
+
+                showMessage(premiumLoginMessage, 'Login Premium efetuado com sucesso!', 'success');
+                setTimeout(() => {
+                    showPage('home-section');
+                    updateFinancialSummary();
+                    renderHistory();
+                }, 500);
+            } else {
+                showMessage(premiumLoginMessage, 'Usuário premium não encontrado ou plano inativo. Contrate o plano.', 'error');
+                currentUserData = null;
+                currentUsername = null;
+                currentAccessCode = null;
+            }
         }
     };
+
 
     // --- Event Listeners ---
 
     // Navegação
     navHomeBtn.addEventListener('click', () => {
-        if (currentUserData) {
+        if (currentUserData) { // Só permite navegar se houver um usuário (local ou premium) logado
             showPage('home-section');
             updateFinancialSummary();
         } else {
-            showMessage(accessMessage, 'Por favor, carregue ou crie um controle primeiro.', 'error');
+            showMessage(accessMessage, 'Por favor, carregue um controle ou faça login para acessar.', 'error');
             showPage('access-section');
         }
     });
@@ -587,20 +627,23 @@ document.addEventListener('DOMContentLoaded', () => {
             showPage('history-section');
             renderHistory();
         } else {
-            showMessage(accessMessage, 'Por favor, carregue ou crie um controle primeiro.', 'error');
+            showMessage(accessMessage, 'Por favor, carregue um controle ou faça login para acessar.', 'error');
             showPage('access-section');
         }
     });
     navSettingsBtn.addEventListener('click', () => {
         if (currentUserData) {
-            registerAccessCodeInput.value = currentAccessCode;
+            // Se for um usuário local, carrega o código de acesso
+            registerAccessCodeInput.value = currentAccessCode || '';
+            // Se for um usuário premium, este campo pode não ser relevante ou estar desabilitado
+            
             cartaoViraDiaInput.value = currentUserData.financialSettings?.cartaoViraDia || '';
             faturaFechaDiaInput.value = currentUserData.financialSettings?.faturaFechaDia || '';
             faturaVenceDiaInput.value = currentUserData.financialSettings?.faturaVenceDia || '';
             rendaMensalInput.value = currentUserData.financialSettings?.rendaMensal || '';
             showPage('settings-section');
         } else {
-            showMessage(accessMessage, 'Por favor, carregue ou crie um controle primeiro.', 'error');
+            showMessage(accessMessage, 'Por favor, carregue um controle ou faça login para acessar.', 'error');
             showPage('access-section');
         }
     });
@@ -609,26 +652,108 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDataBtn.addEventListener('click', () => {
         const code = accessCodeInput.value.trim();
         if (code) {
-            loadUserData(code);
+            loadUserData('local', code);
         } else {
             showMessage(accessMessage, 'Por favor, digite seu código de acesso.', 'error');
         }
     });
 
     startNewBtn.addEventListener('click', () => {
+        // Para um novo controle local, resetamos tudo
         registerAccessCodeInput.value = '';
         cartaoViraDiaInput.value = '';
         faturaFechaDiaInput.value = '';
         faturaVenceDiaInput.value = '';
         rendaMensalInput.value = '';
         currentUserData = { financialSettings: {}, expenses: [] };
-        currentAccessCode = null;
+        currentAccessCode = "novo_local_" + Date.now(); // Gera um novo código local para o novo controle
+        currentUsername = null; // Garante que não é um usuário premium
+        showMessage(accessMessage, 'Novo controle local iniciado. Salve suas configurações!', 'info');
         showPage('settings-section');
     });
 
+    // NOVO: Ação do botão "Quero o Plano Premium!" (WhatsApp)
+    accessPremiumWhatsappBtn.addEventListener('click', () => {
+        const message = encodeURIComponent(`Olá, Gabriel! Tenho interesse no Plano Premium do Controle Financeiro por R$ ${PREMIUM_PRICE}.`);
+        const whatsappLink = `https://wa.me/${WHATSAPP_PHONE}?text=${message}`;
+        window.open(whatsappLink, '_blank');
+    });
+
+    // NOVO: Ação do botão "Entrar (Plano Premium)"
+    loginPremiumBtn.addEventListener('click', async () => {
+        const username = premiumUsernameInput.value.trim();
+        const password = premiumPasswordInput.value.trim();
+
+        if (!username || !password) {
+            showMessage(premiumLoginMessage, 'Preencha usuário e senha premium.', 'error');
+            return;
+        }
+
+        // Simula a chamada ao backend para login
+        try {
+            const response = await fetch(BACKEND_API_URL + '/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                if (data.user.is_premium) {
+                    // Login Premium REALIZADO. Carrega os dados do usuário.
+                    // ATENÇÃO: Aqui você carregaria os dados financeiros (gastos, configurações) do backend,
+                    // mas para manter a compatibilidade com o localStorage atual, vamos simular que carregamos.
+                    // Em um sistema real, o backend retornaria todos os dados do usuário premium.
+                    currentUserData = {
+                        financialSettings: data.user.financialSettings || {}, // Vindo do backend
+                        expenses: data.user.expenses || [], // Vindo do backend
+                        isPremium: true
+                    };
+                    currentUsername = data.user.username;
+                    currentAccessCode = null; // Limpa o código de acesso local
+
+                    // Se a pessoa logar como premium, os dados de gastos do localStorage não são mais a fonte da verdade.
+                    // Você teria que migrar os dados existentes do localStorage para o banco de dados do usuário premium
+                    // na primeira vez que ele logasse como premium, ou sempre carregar do banco.
+                    
+                    // Apenas para simulação:
+                    // Se houver dados no localStorage, podemos considerar migrá-los na primeira vez
+                    // ou perguntar ao usuário se quer migrar. Por simplicidade, vamos resetar ou carregar do servidor.
+                    
+                    // Para o exemplo, vamos SIMULAR que o backend retornou os dados completos do usuário premium.
+                    // Para persistir os dados de gastos de usuários premium, você precisaria adicionar endpoints
+                    // no seu backend Python para salvar/carregar despesas também.
+
+                    showMessage(premiumLoginMessage, 'Login Premium efetuado com sucesso! Carregando seus dados...', 'success');
+                    setTimeout(() => {
+                        showPage('home-section');
+                        updateFinancialSummary();
+                        renderHistory();
+                    }, 500);
+
+                } else {
+                    showMessage(premiumLoginMessage, 'Usuário não tem plano premium ativo. Contrate o plano.', 'info');
+                    // Pode redirecionar para a seção de WhatsApp ou algo similar
+                }
+            } else {
+                showMessage(premiumLoginMessage, data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Erro na requisição de login premium:', error);
+            showMessage(premiumLoginMessage, 'Erro de conexão com o servidor. Verifique sua internet ou tente mais tarde.', 'error');
+        }
+    });
+
+
     // Seção de Cadastro/Configurações
     saveSettingsBtn.addEventListener('click', () => {
-        const code = registerAccessCodeInput.value.trim();
+        const code = registerAccessCodeInput.value.trim(); // Este é o código para usuários LOCAIS
         const viraDia = parseInt(cartaoViraDiaInput.value);
         const fechaDia = parseInt(faturaFechaDiaInput.value);
         const venceDia = parseInt(faturaVenceDiaInput.value);
@@ -644,9 +769,27 @@ document.addEventListener('DOMContentLoaded', () => {
              return;
         }
 
-        if (!currentUserData || !currentAccessCode) {
-            if (localStorage.getItem(`userData_${code}`)) {
-                showMessage(settingsMessage, 'Este código de acesso já existe. Escolha outro ou use a opção "Carregar Meus Dados".', 'error');
+        // Se o usuário atual for premium logado, ele não deve salvar settings em um código local
+        if (currentUsername) {
+            showMessage(settingsMessage, 'Você está logado como Premium. Suas configurações seriam salvas no servidor.', 'info');
+            // AQUI VOCÊ ENVIARIA AS CONFIGURAÇÕES PARA O BACKEND VIA UMA ROTA DE ATUALIZAÇÃO
+            // Ex: fetch(BACKEND_API_URL + '/update_settings', { ... });
+            // Por simplicidade, vamos simular o sucesso e não salvar localmente para premium.
+            currentUserData.financialSettings = { cartaoViraDia: viraDia, faturaFechaDia: fechaDia, faturaVenceDia: venceDia, rendaMensal: renda };
+            // Você também salvaria expenses se houvesse alterações
+            // saveUserData(); // Esta função precisaria de lógica para salvar no backend para premium users
+            showMessage(settingsMessage, 'Configurações premium atualizadas (simulado).', 'success');
+            setTimeout(() => {
+                showPage('home-section');
+                updateFinancialSummary();
+            }, 500);
+            return;
+        }
+
+        // Lógica para salvar configurações de usuário LOCAL
+        if (!currentUserData || !currentAccessCode || currentAccessCode !== code) {
+            if (localStorage.getItem(`localUserData_${code}`)) {
+                showMessage(settingsMessage, 'Este código de acesso local já existe. Tente carregar ou use outro.', 'error');
                 return;
             }
         }
@@ -660,9 +803,9 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             expenses: currentUserData ? currentUserData.expenses : []
         };
-        currentAccessCode = code;
-        saveUserData();
-        showMessage(settingsMessage, 'Configurações salvas com sucesso!', 'success');
+        currentAccessCode = code; // Garante que o código de acesso atual é o que foi salvo
+        saveUserData(); // Salva no localStorage
+        showMessage(settingsMessage, 'Configurações locais salvas com sucesso!', 'success');
         setTimeout(() => {
             showPage('home-section');
             updateFinancialSummary();
@@ -672,6 +815,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Seção Home (Adicionar Gastos)
     categoryButtons.forEach(button => {
         button.addEventListener('click', (e) => {
+            if (!currentUserData) { // Não permite adicionar gasto sem estar logado
+                showMessage(homeMessage, 'Faça login ou inicie um novo controle para adicionar gastos.', 'error');
+                showPage('access-section');
+                return;
+            }
+
             selectedCategoryName.textContent = e.target.dataset.category;
             expenseForm.classList.remove('hidden');
             productInputsContainer.innerHTML = `
@@ -723,6 +872,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     saveExpenseBtn.addEventListener('click', () => {
+        if (!currentUserData) {
+            showMessage(homeMessage, 'Erro: Nenhum usuário logado. Faça login ou inicie um controle.', 'error');
+            showPage('access-section');
+            return;
+        }
+
         const category = selectedCategoryName.textContent;
         const paymentMethod = paymentMethodSelect.value;
         const numParcelas = paymentMethod === 'Credito' ? parseInt(numParcelasInput.value) : 1;
@@ -772,36 +927,33 @@ document.addEventListener('DOMContentLoaded', () => {
             installments: installments
         };
 
-        if (currentUserData) {
-            if (!currentUserData.expenses) {
-                currentUserData.expenses = [];
-            }
-            currentUserData.expenses.push(newExpense);
-            saveUserData();
-            updateFinancialSummary();
-            showMessage(homeMessage, 'Gasto registrado com sucesso!', 'success');
-            expenseForm.classList.add('hidden');
-            productInputsContainer.innerHTML = `
-                <div class="product-input-group">
-                    <input type="text" class="product-name" placeholder="Nome do Produto" required>
-                    <input type="number" class="product-value" step="0.01" placeholder="Valor (R$)" required>
-                    <button class="remove-product-btn">🗑️</button>
-                </div>
-            `;
-             productInputsContainer.querySelector('.remove-product-btn').addEventListener('click', (ev) => {
-                if (productInputsContainer.querySelectorAll('.product-input-group').length > 1) {
-                    ev.target.closest('.product-input-group').remove();
-                } else {
-                    showMessage(homeMessage, 'Você precisa de pelo menos um produto para o gasto.', 'error');
-                }
-            });
-            paymentMethodSelect.value = "Credito";
-            parcelasGroup.classList.remove('hidden');
-            numParcelasInput.value = 1;
-        } else {
-            showMessage(homeMessage, 'Erro: Nenhum dado de usuário carregado. Por favor, carregue ou crie um controle.', 'error');
-            showPage('access-section');
+        // Adiciona o gasto ao currentUserData
+        if (!currentUserData.expenses) {
+            currentUserData.expenses = [];
         }
+        currentUserData.expenses.push(newExpense);
+        saveUserData(); // Salva o estado atual do currentUserData
+
+        updateFinancialSummary();
+        showMessage(homeMessage, 'Gasto registrado com sucesso!', 'success');
+        expenseForm.classList.add('hidden');
+        productInputsContainer.innerHTML = `
+            <div class="product-input-group">
+                <input type="text" class="product-name" placeholder="Nome do Produto" required>
+                <input type="number" class="product-value" step="0.01" placeholder="Valor (R$)" required>
+                <button class="remove-product-btn">🗑️</button>
+            </div>
+        `;
+         productInputsContainer.querySelector('.remove-product-btn').addEventListener('click', (ev) => {
+            if (productInputsContainer.querySelectorAll('.product-input-group').length > 1) {
+                ev.target.closest('.product-input-group').remove();
+            } else {
+                showMessage(homeMessage, 'Você precisa de pelo menos um produto para o gasto.', 'error');
+            }
+        });
+        paymentMethodSelect.value = "Credito";
+        parcelasGroup.classList.remove('hidden');
+        numParcelasInput.value = 1;
     });
 
     closeModalBtn.addEventListener('click', () => editModal.classList.add('hidden'));

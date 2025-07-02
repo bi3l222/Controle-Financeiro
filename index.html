@@ -19,15 +19,40 @@
     <main>
         <section id="access-section" class="page active">
             <h2>Acessar seu Controle</h2>
-            <p>Digite seu código de acesso para carregar seus dados.</p>
-            <div class="input-group">
-                <label for="access-code">Código de Acesso:</label>
-                <input type="text" id="access-code" placeholder="Digite seu código aqui" required>
+            
+            <div class="access-option">
+                <h3>Acesso Gratuito (Dados Locais)</h3>
+                <p>Seus dados são salvos apenas neste navegador. Ideal para teste.</p>
+                <div class="input-group">
+                    <label for="access-code">Código de Acesso:</label>
+                    <input type="text" id="access-code" placeholder="Digite seu código aqui" required>
+                </div>
+                <button id="load-data-btn">🔓 Carregar Meus Dados Locais</button>
+                <button id="start-new-btn">✨ Começar um Novo Controle Local</button>
+                <div id="access-message" class="message"></div>
             </div>
-            <button id="load-data-btn">🔓 Carregar Meus Dados</button>
+
             <p class="separator-text">ou</p>
-            <button id="start-new-btn">✨ Começar um Novo Controle</button>
-            <div id="access-message" class="message"></div>
+
+            <div class="access-option premium-section-intro">
+                <h3>🌟 Acesso Premium (Dados na Nuvem)</h3>
+                <p>Acesse seus dados de qualquer lugar, a qualquer momento, sem risco de perda! Para acesso, faça o login:</p>
+                <div class="input-group">
+                    <label for="premium-username">Usuário Premium:</label>
+                    <input type="text" id="premium-username" placeholder="Seu nome de usuário" required>
+                </div>
+                <div class="input-group">
+                    <label for="premium-password">Senha Premium:</label>
+                    <input type="password" id="premium-password" placeholder="Sua senha" required>
+                </div>
+                <button id="login-premium-btn">🔐 Entrar (Plano Premium)</button>
+                <div id="premium-login-message" class="message"></div>
+
+                <p class="premium-call-to-action">
+                    Não tem o Plano Premium? Adquira agora por apenas <span class="premium-price">R$ 19,90</span>!
+                    <button id="access-premium-whatsapp-btn">👉 Quero o Plano Premium!</button>
+                </p>
+            </div>
         </section>
 
         <section id="settings-section" class="page">

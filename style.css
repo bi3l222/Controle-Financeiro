@@ -119,6 +119,7 @@ h2::after {
 
 .input-group input[type="text"],
 .input-group input[type="number"],
+.input-group input[type="password"], /* Adicionado input de password */
 .input-group select {
     width: calc(100% - 24px); /* Ajusta para padding e borda */
     padding: 12px;
@@ -178,6 +179,61 @@ button:hover {
     background-color: #2980b9;
 }
 
+/* Estilos para a seção de acesso (premium e gratuito) */
+.access-option {
+    background-color: #fefefe;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+    border: 1px solid var(--border-color);
+}
+
+.access-option h3 {
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 1.6em;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.access-option.premium-section-intro {
+    background-color: #eef7ff; /* Fundo mais claro para premium */
+    border-color: #bbdefb;
+}
+.access-option.premium-section-intro h3 {
+    color: #3f51b5; /* Azul mais forte para premium */
+}
+
+.premium-call-to-action {
+    text-align: center;
+    margin-top: 25px;
+    font-size: 1.1em;
+    color: #555;
+    font-weight: bold;
+}
+.premium-price {
+    color: #20b2aa; /* Verde-água para o preço */
+    font-size: 1.3em;
+    font-weight: bold;
+}
+#access-premium-whatsapp-btn {
+    background-color: #25D366; /* Verde WhatsApp */
+    margin-top: 15px;
+    width: fit-content;
+}
+#access-premium-whatsapp-btn:hover {
+    background-color: #1DA851;
+}
+#login-premium-btn {
+    background-color: #3f51b5; /* Azul para login premium */
+    margin-top: 15px;
+}
+#login-premium-btn:hover {
+    background-color: #303f9f;
+}
+
+
 .separator-text {
     text-align: center;
     margin: 25px 0;
@@ -216,6 +272,13 @@ button:hover {
     color: var(--error-color);
     border: 1px solid #f5c6cb;
 }
+
+.message.info { /* Adicionado estilo para mensagens de informação */
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
 
 /* Home Section Styles */
 .summary {
@@ -366,7 +429,7 @@ button:hover {
     margin-top: 25px;
 }
 
-.expense-item {
+.expense-item { /* Esta classe não está mais em uso direto no renderHistory */
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
     padding: 20px;
@@ -377,7 +440,7 @@ button:hover {
     overflow: hidden;
 }
 
-.expense-item::before {
+.expense-item::before { /* Esta classe não está mais em uso direto no renderHistory */
     content: '';
     position: absolute;
     top: 0;
@@ -387,24 +450,24 @@ button:hover {
     background-color: var(--primary-light); /* Linha lateral colorida */
 }
 
-.expense-item h3 {
+.expense-item h3 { /* Esta classe não está mais em uso direto no renderHistory */
     margin-top: 0;
     color: var(--primary-dark);
     font-size: 1.5em;
     margin-bottom: 10px;
-    padding-left: 10px; /* Espaço para a linha lateral */
+    padding-left: 10px;
 }
 
-.expense-item p {
+.expense-item p { /* Esta classe não está mais em uso direto no renderHistory */
     margin: 5px 0;
     color: var(--secondary-text-color);
 }
 
-.expense-item p strong {
+.expense-item p strong { /* Esta classe não está mais em uso direto no renderHistory */
     color: var(--text-color);
 }
 
-.expense-item ul {
+.expense-item ul { /* Esta classe não está mais em uso direto no renderHistory */
     list-style: none;
     padding: 0;
     margin: 15px 0 0 0;
@@ -412,8 +475,8 @@ button:hover {
     padding-top: 15px;
 }
 
-.expense-item ul li {
-    background-color: #fefefe;
+.expense-item ul li { /* Esta classe não está mais em uso direto no renderHistory */
+    background-color: #f7f7f7;
     padding: 10px 12px;
     margin-bottom: 8px;
     border-radius: 6px;
@@ -423,11 +486,11 @@ button:hover {
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.expense-item ul li span {
+.expense-item ul li span { /* Esta classe não está mais em uso direto no renderHistory */
     font-size: 1em;
 }
 
-.expense-item .item-total {
+.expense-item .item-total { /* Esta classe não está mais em uso direto no renderHistory */
     font-weight: bold;
     color: var(--accent-color);
     font-size: 1.2em;
@@ -437,33 +500,8 @@ button:hover {
     padding-top: 10px;
 }
 
-.history-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 15px;
-}
-
-.history-actions button {
-    margin: 0;
-    padding: 8px 15px;
-    font-size: 0.9em;
-    border-radius: 5px;
-    box-shadow: none;
-}
-
-.history-actions .edit-btn {
-    background-color: #f39c12; /* Laranja para editar */
-}
-.history-actions .edit-btn:hover {
-    background-color: #e67e22;
-}
-
-.history-actions .delete-btn {
-    background-color: #e74c3c; /* Vermelho para deletar */
-}
-.history-actions .delete-btn:hover {
-    background-color: #c0392b;
+.history-actions { /* Esta classe não está mais em uso direto no renderHistory */
+    display: none; /* Mantém oculto, pois o clique no item já abre o modal de edição */
 }
 
 #no-history-message {
@@ -499,8 +537,8 @@ button:hover {
     max-width: 600px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     position: relative;
-    max-height: 90vh; /* Limita a altura do modal */
-    overflow-y: auto; /* Adiciona scroll se conteúdo for grande */
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal-content h3 {
@@ -526,10 +564,10 @@ button:hover {
 }
 
 .modal-content .product-input-group {
-    margin-bottom: 10px; /* Espaçamento menor dentro do modal */
+    margin-bottom: 10px;
 }
 .modal-content .product-input-group input {
-    width: calc(100% - 10px - 35px); /* Ajusta para botão X */
+    width: calc(100% - 10px - 35px);
 }
 
 #edit-product-inputs .product-input-group {
@@ -540,107 +578,11 @@ button:hover {
     background-color: #fefefe;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-    header h1 {
-        font-size: 2em;
-    }
-    nav {
-        flex-wrap: wrap;
-        padding: 0 10px;
-    }
-    nav button {
-        padding: 10px 20px;
-        font-size: 0.95em;
-        flex-grow: 1; /* Permite que os botões cresçam */
-    }
-    main {
-        margin: 15px;
-        padding: 15px;
-    }
-    h2 {
-        font-size: 1.6em;
-        margin-bottom: 25px;
-    }
-    .input-group input, .input-group select {
-        width: calc(100% - 20px); /* Ajuste para padding menor */
-        padding: 10px;
-    }
-    button {
-        padding: 12px 25px;
-        font-size: 1em;
-    }
-    .category-buttons {
-        gap: 10px;
-    }
-    .category-btn {
-        padding: 12px 18px;
-        font-size: 1em;
-        min-width: unset;
-        flex: 1 1 45%; /* Duas colunas em telas menores */
-    }
-    .product-input-group {
-        flex-direction: column;
-        gap: 8px;
-    }
-    .product-input-group input {
-        width: 100%;
-    }
-    .product-input-group .remove-product-btn {
-        align-self: flex-end; /* Alinha o botão X para a direita */
-    }
-    .modal-content {
-        width: 95%;
-        padding: 20px;
-    }
-}
-
-@media (max-width: 480px) {
-    header h1 {
-        font-size: 1.8em;
-    }
-    nav {
-        flex-direction: column;
-        gap: 10px;
-    }
-    nav button {
-        width: 90%;
-        margin: 0 auto;
-    }
-    main {
-        margin: 10px;
-        padding: 10px;
-    }
-    h2 {
-        font-size: 1.4em;
-    }
-    .summary p {
-        font-size: 1em;
-    }
-    .category-btn {
-        flex: 1 1 100%; /* Uma coluna em telas muito pequenas */
-    }
-    .product-input-group .remove-product-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 0.8em;
-        padding: 5px;
-    }
-    .expense-item h3 {
-        font-size: 1.3em;
-    }
-    .expense-item ul li {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 5px;
-    }
-}
-
 /* Checkbox de Pagamento no Histórico */
 .checkbox-container {
-    display: inline-block; /* Ou flex, dependendo do layout desejado */
+    display: inline-block;
     position: relative;
-    padding-left: 25px; /* Espaço para o checkbox customizado */
+    padding-left: 25px;
     margin-bottom: 5px;
     cursor: pointer;
     font-size: 0.9em;
@@ -651,7 +593,6 @@ button:hover {
     color: var(--secondary-text-color);
 }
 
-/* Esconde o checkbox padrão do navegador */
 .checkbox-container input {
     position: absolute;
     opacity: 0;
@@ -660,7 +601,6 @@ button:hover {
     width: 0;
 }
 
-/* Cria um checkbox customizado */
 .checkmark {
     position: absolute;
     top: 0;
@@ -669,33 +609,28 @@ button:hover {
     width: 18px;
     background-color: #eee;
     border: 1px solid #ccc;
-    border-radius: 4px; /* Bordas levemente arredondadas */
+    border-radius: 4px;
 }
 
-/* Ao passar o mouse, muda a cor de fundo do checkbox */
 .checkbox-container:hover input ~ .checkmark {
     background-color: #ccc;
 }
 
-/* Quando o checkbox é clicado/marcado, muda a cor de fundo */
 .checkbox-container input:checked ~ .checkmark {
-    background-color: var(--accent-color); /* Verde para "pago" */
+    background-color: var(--accent-color);
     border-color: var(--accent-dark);
 }
 
-/* Cria o ícone de "check" (escondido por padrão) */
 .checkmark:after {
     content: "";
     position: absolute;
     display: none;
 }
 
-/* Mostra o ícone de "check" quando marcado */
 .checkbox-container input:checked ~ .checkmark:after {
     display: block;
 }
 
-/* Estilo do ícone de "check" */
 .checkbox-container .checkmark:after {
     left: 6px;
     top: 3px;
@@ -708,10 +643,9 @@ button:hover {
     transform: rotate(45deg);
 }
 
-/* Adicione isso ao seu style.css */
-
+/* Estilos de agrupamento do histórico */
 .month-header {
-    background-color: var(--primary-color); /* Cor de fundo para o cabeçalho do mês */
+    background-color: var(--primary-color);
     color: white;
     padding: 15px 20px;
     margin-top: 30px;
@@ -720,22 +654,22 @@ button:hover {
     font-size: 1.8em;
     text-align: center;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    position: sticky; /* Fixa o cabeçalho do mês ao rolar */
+    position: sticky;
     top: 0;
-    z-index: 50; /* Garante que fique acima de outros elementos */
+    z-index: 50;
 }
 
 .category-section {
     margin-bottom: 25px;
     padding: 15px;
-    background-color: #fcfcfc; /* Fundo mais claro para cada seção de categoria */
+    background-color: #fcfcfc;
     border-radius: 10px;
     border: 1px solid var(--border-color);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .category-header {
-    color: var(--primary-dark); /* Cor para o nome da categoria */
+    color: var(--primary-dark);
     font-size: 1.4em;
     margin-top: 0;
     margin-bottom: 15px;
@@ -744,7 +678,7 @@ button:hover {
 }
 
 .expense-item-small {
-    background-color: var(--card-background); /* Fundo branco para o item individual */
+    background-color: var(--card-background);
     padding: 12px 15px;
     border: 1px solid #eee;
     border-radius: 8px;
@@ -752,7 +686,7 @@ button:hover {
     font-size: 0.95em;
     position: relative;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    cursor: pointer; /* Indica que é clicável para edição */
+    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -780,32 +714,32 @@ button:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px dotted #f0f0f0; /* Linha sutil entre produtos */
+    border-bottom: 1px dotted #f0f0f0;
 }
 .expense-item-small ul li:last-child {
     border-bottom: none;
 }
 
-/* Esconde os botões de editar/excluir no histórico normal,
-   já que o clique no item abrirá o modal de edição */
-.history-actions {
-    display: none;
+#no-history-message {
+    text-align: center;
+    color: var(--secondary-text-color);
+    margin-top: 50px;
+    font-size: 1.1em;
 }
 
-/* Adicione este bloco no final do seu style.css */
-
+/* Estilos para o rodapé e páginas de conteúdo (Termos/Copyright) */
 footer {
     text-align: center;
     padding: 20px;
     margin-top: 40px;
-    background-color: #f0f0f0; /* Um fundo neutro para o rodapé */
+    background-color: #f0f0f0;
     border-top: 1px solid #e0e0e0;
     color: #555;
     font-size: 0.9em;
 }
 
 footer a {
-    color: var(--primary-color); /* Usa a cor principal para os links do rodapé */
+    color: var(--primary-color);
     text-decoration: none;
     font-weight: bold;
     padding: 0 10px;
@@ -817,7 +751,6 @@ footer a:hover {
     text-decoration: underline;
 }
 
-/* Estilos gerais para páginas de conteúdo (Termos/Copyright) */
 .content-page {
     max-width: 800px;
     margin: 40px auto;
@@ -844,14 +777,14 @@ footer a:hover {
     color: var(--text-color);
 }
 .content-page a {
-    color: #3498db; /* Azul para links em conteúdo */
+    color: #3498db;
     text-decoration: none;
 }
 .content-page a:hover {
     text-decoration: underline;
 }
 .content-page ul {
-    list-style: disc; /* Bolinhas para listas */
+    list-style: disc;
     margin-left: 20px;
     margin-bottom: 15px;
 }
@@ -860,18 +793,17 @@ footer a:hover {
     line-height: 1.6;
     color: var(--text-color);
 }
-/* Estilo para o botão de navegação nas páginas de conteúdo */
 .nav-button {
-    background-color: #3498db; /* Azul */
+    background-color: #3498db;
     color: white;
     border: none;
     padding: 10px 20px;
     border-radius: 25px;
     cursor: pointer;
     font-size: 1em;
-    text-decoration: none; /* Remove sublinhado padrão */
+    text-decoration: none;
     transition: background-color 0.3s ease, transform 0.2s ease;
-    display: inline-block; /* Para que o padding funcione */
+    display: inline-block;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .nav-button:hover {
@@ -879,8 +811,59 @@ footer a:hover {
     transform: translateY(-2px);
 }
 
-/* @media queries para responsividade do rodapé e páginas de conteúdo */
+/* Responsividade */
 @media (max-width: 768px) {
+    header h1 {
+        font-size: 2em;
+    }
+    nav {
+        flex-wrap: wrap;
+        padding: 0 10px;
+    }
+    nav button {
+        padding: 10px 20px;
+        font-size: 0.95em;
+        flex-grow: 1;
+    }
+    main {
+        margin: 15px;
+        padding: 15px;
+    }
+    h2 {
+        font-size: 1.6em;
+        margin-bottom: 25px;
+    }
+    .input-group input, .input-group select {
+        width: calc(100% - 20px);
+        padding: 10px;
+    }
+    button {
+        padding: 12px 25px;
+        font-size: 1em;
+    }
+    .category-buttons {
+        gap: 10px;
+    }
+    .category-btn {
+        padding: 12px 18px;
+        font-size: 1em;
+        min-width: unset;
+        flex: 1 1 45%;
+    }
+    .product-input-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .product-input-group input {
+        width: 100%;
+    }
+    .product-input-group .remove-product-btn {
+        align-self: flex-end;
+    }
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
     .content-page {
         margin: 20px auto;
         padding: 20px;
@@ -901,15 +884,43 @@ footer a:hover {
 }
 
 @media (max-width: 480px) {
-    .content-page {
-        margin: 10px auto;
-        padding: 15px;
+    header h1 {
+        font-size: 1.8em;
     }
-    .content-page h1 {
-        font-size: 1.6em;
+    nav {
+        flex-direction: column;
+        gap: 10px;
     }
-    .content-page h3 {
-        font-size: 1.2em;
+    nav button {
+        width: 90%;
+        margin: 0 auto;
+    }
+    main {
+        margin: 10px;
+        padding: 10px;
+    }
+    h2 {
+        font-size: 1.4em;
+    }
+    .summary p {
+        font-size: 1em;
+    }
+    .category-btn {
+        flex: 1 1 100%;
+    }
+    .product-input-group .remove-product-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8em;
+        padding: 5px;
+    }
+    .expense-item-small h3 {
+        font-size: 1.3em;
+    }
+    .expense-item-small ul li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
     }
     footer p {
         flex-direction: column;
