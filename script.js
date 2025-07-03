@@ -67,14 +67,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentAccessCode = null; // Código de acesso para usuários locais
     let currentUsername = null; // Nome de usuário para usuários premium (logado)
 
-    // --- Configurações do Plano Premium ---
-    const PREMIUM_PRICE = "19,90";
-    const WHATSAPP_PHONE = "5511946693652"; // Seu número de WhatsApp
+    // --- Configurações do Plano Premium (HARDCODED NO FRONTEND - INSEGURO) ---
+    // ESTA LISTA DEVE SER GEREENCIADA NO PAINEL ADMIN E SALVA EM BANCO DE DADOS EM UM SISTEMA REAL.
+    // Qualquer um pode ver estas credenciais inspecionando o código.
+    const PREMIUM_USERS = {
+        "Pedro123": "Pedro123", // Usuário de teste
+        "cliente_premium": "senha_do_cliente",
+        // Adicione mais usuários premium aqui manualmente, conforme necessário.
+    };
 
-    // URL DO SEU BACKEND PYTHON (MUITO IMPORTANTE: SUBSTITUA PELA URL REAL!)
-    // EX: 'https://seuhosting.com/api' (se seu backend estiver lá)
-    // Se estiver testando LOCALMENTE, use 'http://127.0.0.1:5000/api'
-    const BACKEND_API_URL = 'http://127.0.0.1:5000/api'; // <--- VOCÊ DEVE MUDAR ISSO!
+    const PREMIUM_PRICE = "19,90";
+    const WHATSAPP_PHONE = "551196693652"; // Seu número de WhatsApp
 
 
     // --- Funções Auxiliares ---
@@ -381,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const expense = currentUserData.expenses.find(exp => exp.id === expenseId);
         if (expense && expense.installments && expense.installments[parcelaIndex]) {
             expense.installments[parcelaIndex].paid = isChecked;
-            saveUserData();
+            saveUserData(); // Salva a mudança no status da parcela
             updateFinancialSummary();
             renderHistory();
         }
@@ -447,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const index = currentUserData.expenses.findIndex(exp => exp.id === expenseId);
 
         if (index === -1) {
-            showMessage(homeMessage, 'Erro: Gasto a ser editado não encontrado.', 'error');
+            showMessage(homeMessage, 'Gasto não encontrado para edição.', 'error');
             return;
         }
 
@@ -516,128 +519,74 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    // Salva os dados do usuário. Condicional para local ou premium.
-    const saveUserData = async () => {
-        if (currentUsername) { // Usuário premium logado (salva no backend)
-            try {
-                const response = await fetch(BACKEND_API_URL + '/update_user_data', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username: currentUsername, // Envia o username para identificar o usuário
-                        financialSettings: currentUserData.financialSettings,
-                        expenses: currentUserData.expenses
-                    })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    console.log("Dados premium salvos no servidor:", data.message);
-                } else {
-                    console.error("Erro ao salvar dados premium no servidor:", data.message);
-                }
-            } catch (error) {
-                console.error('Erro de conexão ao salvar dados premium:', error);
-            }
-        } else if (currentAccessCode) { // Usuário local (salva no localStorage)
-            localStorage.setItem(`localUserData_${currentAccessCode}`, JSON.stringify(currentUserData));
-            console.log("Dados locais salvos no localStorage.");
-        }
+    // Salva os dados do usuário. Agora sempre no localStorage.
+    const saveUserData = () => {
+        // Se for um usuário premium, usa o username como chave para o localStorage
+        const storageKey = currentUsername ? `premiumUserData_${currentUsername}` : `localUserData_${currentAccessCode}`;
+        localStorage.setItem(storageKey, JSON.stringify(currentUserData));
+        console.log(`Dados salvos no localStorage sob a chave: ${storageKey}`);
     };
 
-    // Carrega os dados do usuário. Condicional para local ou premium.
-    const loadUserData = async (type, identifier, password = null) => {
+    // Carrega os dados do usuário. Condicional para local ou premium (agora ambos via localStorage).
+    const loadUserData = (type, identifier, password = null) => {
+        let storageKey = '';
+        let successMessageElement = accessMessage; // Padrão para mensagens de acesso local
+
         if (type === 'local') {
-            const data = localStorage.getItem(`localUserData_${identifier}`);
-            if (data) {
-                currentUserData = JSON.parse(data);
-                if (!currentUserData.expenses) { currentUserData.expenses = []; }
-                if (!currentUserData.financialSettings) { currentUserData.financialSettings = {}; }
-                currentUserData.expenses.forEach(expense => {
-                    if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1 && (!expense.installments || expense.installments.length !== expense.numParcelas)) {
-                        expense.installments = Array.from({ length: expense.numParcelas }, () => ({ paid: false }));
-                    } else if (expense.numParcelas === 1 && expense.installments) {
-                        delete expense.installments;
-                    }
-                });
-                currentUserData.isPremium = false; // Usuário local não é premium
+            storageKey = `localUserData_${identifier}`;
+        } else if (type === 'premium' && PREMIUM_USERS[identifier] === password) { // Validação hardcoded
+            storageKey = `premiumUserData_${identifier}`;
+            successMessageElement = premiumLoginMessage; // Mensagem para login premium
+            currentUsername = identifier; // Define o usuário premium logado
+            currentAccessCode = null; // Limpa o acesso local se logou como premium
+        } else { // Login premium falhou na validação
+            showMessage(premiumLoginMessage, 'Usuário ou senha premium incorretos.', 'error');
+            return;
+        }
+
+        const data = localStorage.getItem(storageKey);
+        
+        if (data) {
+            currentUserData = JSON.parse(data);
+            if (!currentUserData.expenses) { currentUserData.expenses = []; }
+            if (!currentUserData.financialSettings) { currentUserData.financialSettings = {}; }
+            currentUserData.expenses.forEach(expense => {
+                if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1 && (!expense.installments || expense.installments.length !== expense.numParcelas)) {
+                    expense.installments = Array.from({ length: expense.numParcelas }, () => ({ paid: false }));
+                } else if (expense.numParcelas === 1 && expense.installments) {
+                    delete expense.installments;
+                }
+            });
+            currentUserData.isPremium = (type === 'premium'); // Define o status premium com base no tipo de login
+
+            if (type === 'local') {
                 currentAccessCode = identifier;
                 currentUsername = null;
+            }
 
-                showMessage(accessMessage, 'Dados locais carregados com sucesso!', 'success');
-                setTimeout(() => {
+            showMessage(successMessageElement, `${type === 'premium' ? 'Login Premium' : 'Dados locais'} carregados com sucesso!`, 'success');
+            setTimeout(() => {
+                showPage('home-section');
+                updateFinancialSummary();
+                renderHistory();
+            }, 500);
+        } else {
+            // Se não encontrou dados no localStorage, e for um login premium válido, cria um novo objeto de dados
+            if (type === 'premium' && PREMIUM_USERS[identifier] === password) {
+                 currentUserData = { financialSettings: {}, expenses: [], isPremium: true };
+                 currentUsername = identifier;
+                 currentAccessCode = null; // Limpa o acesso local se logou como premium
+                 showMessage(premiumLoginMessage, `Login Premium efetuado! Criando novo controle para '${identifier}'...`, 'info');
+                 setTimeout(() => {
                     showPage('home-section');
                     updateFinancialSummary();
                     renderHistory();
                 }, 500);
-            } else {
+            } else { // Não encontrou dados e não é um login premium
                 showMessage(accessMessage, 'Código de acesso não encontrado. Crie um novo controle.', 'error');
                 currentUserData = null;
                 currentAccessCode = null;
                 currentUsername = null;
-            }
-        } else if (type === 'premium' && password !== null) {
-            try {
-                const response = await fetch(BACKEND_API_URL + '/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username: identifier,
-                        password: password
-                    })
-                });
-
-                // Verifica se a resposta HTTP é OK (200-299). Se não for, lança um erro.
-                if (!response.ok) {
-                    const errorText = await response.text(); // Tenta ler o texto do erro
-                    throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
-                }
-
-                const data = await response.json();
-
-                if (data.success) {
-                    if (data.user.is_premium) {
-                        currentUserData = {
-                            financialSettings: data.user.financialSettings || {},
-                            expenses: data.user.expenses || [],
-                            isPremium: true
-                        };
-                        currentUserData.expenses.forEach(expense => {
-                            if (expense.paymentMethod === 'Credito' && expense.numParcelas > 1 && (!expense.installments || expense.installments.length !== expense.numParcelas)) {
-                                expense.installments = Array.from({ length: expense.numParcelas }, () => ({ paid: false }));
-                            } else if (expense.numParcelas === 1 && expense.installments) {
-                                delete expense.installments;
-                            }
-                        });
-
-                        currentUsername = data.user.username;
-                        currentAccessCode = null; 
-
-                        showMessage(premiumLoginMessage, 'Login Premium efetuado com sucesso! Carregando seus dados...', 'success');
-                        setTimeout(() => {
-                            showPage('home-section');
-                            updateFinancialSummary();
-                            renderHistory();
-                        }, 500);
-
-                    } else {
-                        showMessage(premiumLoginMessage, 'Usuário não tem plano premium ativo. Contrate o plano.', 'info');
-                    }
-                } else {
-                    showMessage(premiumLoginMessage, data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Erro na requisição de login premium:', error);
-                // Mensagem mais específica para o usuário
-                if (error.message.includes("Failed to fetch")) {
-                     showMessage(premiumLoginMessage, 'Erro de conexão com o servidor. O servidor pode estar offline ou a URL está incorreta.', 'error');
-                } else {
-                    showMessage(premiumLoginMessage, `Erro ao tentar login: ${error.message}`, 'error');
-                }
             }
         }
     };
@@ -667,9 +616,11 @@ document.addEventListener('DOMContentLoaded', () => {
     navSettingsBtn.addEventListener('click', () => {
         if (currentUserData) {
             registerAccessCodeInput.value = currentAccessCode || '';
+            // Se for um usuário premium, este campo não é o principal para ele
             if (currentUsername) {
                  registerAccessCodeInput.disabled = true;
-                 registerAccessCodeInput.placeholder = "Logado como Premium (sem código local)";
+                 registerAccessCodeInput.placeholder = `Logado como Premium: ${currentUsername}`;
+                 // Pode desabilitar o botão de salvar local para premium também
             } else {
                  registerAccessCodeInput.disabled = false;
                  registerAccessCodeInput.placeholder = "Ex: meucontrole123";
@@ -717,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Ação do botão "Entrar (Plano Premium)"
-    loginPremiumBtn.addEventListener('click', async () => {
+    loginPremiumBtn.addEventListener('click', () => {
         const username = premiumUsernameInput.value.trim();
         const password = premiumPasswordInput.value.trim();
 
@@ -725,12 +676,12 @@ document.addEventListener('DOMContentLoaded', () => {
             showMessage(premiumLoginMessage, 'Preencha usuário e senha premium.', 'error');
             return;
         }
-        await loadUserData('premium', username, password);
+        loadUserData('premium', username, password); // Chama loadUserData com tipo 'premium'
     });
 
     // Seção de Cadastro/Configurações (Salvar)
-    saveSettingsBtn.addEventListener('click', async () => {
-        const code = registerAccessCodeInput.value.trim();
+    saveSettingsBtn.addEventListener('click', () => {
+        const code = registerAccessCodeInput.value.trim(); // Relevante apenas para usuários locais
         const viraDia = parseInt(cartaoViraDiaInput.value);
         const fechaDia = parseInt(faturaFechaDiaInput.value);
         const venceDia = parseInt(faturaVenceDiaInput.value);
@@ -748,7 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
             rendaMensal: renda,
         };
 
-        await saveUserData();
+        saveUserData(); // Salva os dados (agora a função saveUserData é condicional)
 
         showMessage(settingsMessage, 'Configurações salvas com sucesso!', 'success');
         setTimeout(() => {
@@ -816,7 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    saveExpenseBtn.addEventListener('click', async () => {
+    saveExpenseBtn.addEventListener('click', () => { // Removido 'async' pois não há mais 'await'
         if (!currentUserData) {
             showMessage(homeMessage, 'Erro: Nenhum usuário logado. Faça login ou inicie um controle.', 'error');
             showPage('access-section');
@@ -876,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentUserData.expenses = [];
         }
         currentUserData.expenses.push(newExpense);
-        await saveUserData();
+        saveUserData(); // Não precisa de await aqui
 
         updateFinancialSummary();
         showMessage(homeMessage, 'Gasto registrado com sucesso!', 'success');
